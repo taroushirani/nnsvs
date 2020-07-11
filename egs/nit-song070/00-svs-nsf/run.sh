@@ -20,6 +20,10 @@ pretrained_expdir=
 batch_size=4
 
 sample_rate=16000
+# The bap(Band Aperiodic-ity) dimension of 16kHz is 3 and differs from that of 48kHz(15).
+acoustic_model_stream_sizes=[180,3,1,3]
+# 180+3+1+3
+acoustic_model_out_dim=187
 
 stage=0
 stop_stage=0
@@ -170,7 +174,9 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
         data.dev.out_dir=$dump_norm_dir/$dev_set/out_acoustic/ \
         model=acoustic train.out_dir=$expdir/acoustic \
         data.batch_size=$batch_size \
-        resume.checkpoint=$resume_checkpoint
+        resume.checkpoint=$resume_checkpoint \
+        model.stream_sizes=$acoustic_model_stream_sizes \
+        model.netG.params.out_dim=$acoustic_model_out_dim
 fi
 
 
