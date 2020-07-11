@@ -219,11 +219,12 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             acoustic.in_scaler_path=$dump_norm_dir/in_acoustic_scaler.joblib \
             acoustic.out_scaler_path=$dump_norm_dir/out_acoustic_scaler.joblib \
             acoustic.model_yaml=$expdir/acoustic/model.yaml \
+            acoustic.stream_sizes=$acoustic_model_stream_sizes \
             utt_list=./data/list/$s.list \
             in_dir=data/acoustic/$input/ \
             out_dir=$expdir/synthesis/$s/latest/$input \
             ground_truth_duration=$ground_truth_duration \
-	    sample_rate=$sample_rate
+	        sample_rate=$sample_rate
         done
     done
 fi
