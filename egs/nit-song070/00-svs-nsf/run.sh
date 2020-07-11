@@ -19,6 +19,8 @@ pretrained_expdir=
 
 batch_size=4
 
+sample_rate=16000
+
 stage=0
 stop_stage=0
 
@@ -70,7 +72,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     echo "stage 0: Data preparation"
     # the following three directories will be created
     # 1) data/timelag 2) data/duration 3) data/acoustic
-    python utils/data_prep.py $hts_demo_root ./data --gain-normalize --sample-rate 16000
+    python utils/data_prep.py $hts_demo_root ./data --gain-normalize --sample-rate $sample_rate
 
     echo "train/dev/eval split"
     mkdir -p data/list
@@ -214,7 +216,8 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             utt_list=./data/list/$s.list \
             in_dir=data/acoustic/$input/ \
             out_dir=$expdir/synthesis/$s/latest/$input \
-            ground_truth_duration=$ground_truth_duration
+            ground_truth_duration=$ground_truth_duration \
+	    sample_rate=$sample_rate
         done
     done
 fi
