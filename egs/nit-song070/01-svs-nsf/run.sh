@@ -93,7 +93,8 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     for s in ${datasets[@]};
     do
       nnsvs-prepare-features utt_list=data/list/$s.list out_dir=$dump_org_dir/$s/  \
-        question_path=$question_path
+			     question_path=$question_path \
+			     acoustic.relative_f0=False
     done
 
     # Compute normalization stats for each input/output
@@ -220,11 +221,54 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             acoustic.out_scaler_path=$dump_norm_dir/out_acoustic_scaler.joblib \
             acoustic.model_yaml=$expdir/acoustic/model.yaml \
             acoustic.stream_sizes=$acoustic_model_stream_sizes \
+	    acoustic.relative_f0=False \
             utt_list=./data/list/$s.list \
             in_dir=data/acoustic/$input/ \
             out_dir=$expdir/synthesis/$s/latest/$input \
             ground_truth_duration=$ground_truth_duration \
 	        sample_rate=$sample_rate
         done
+    done
+fi
+
+if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
+    if [ ! -e downloads/project-NN-Pytorch-scripts/ ]; then
+	echo "stage 7: Download NSF"
+        mkdir -p downloads
+        cd downloads
+	git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
+    fi
+    
+fi
+
+if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
+    echo "stage 8: Prepare data for NSF"
+    output_dir=$expdir/nsf
+    mkdir -p $output_dir
+    for s in ${datasets[@]};
+    do
+        if [ $s = $eval_set ]; then
+	    #	    python utils/nsf_data_prep.py $dump_norm_dir/$s/out_acoustic $output_dir --relative_f0 --test_set
+	    python utils/nsf_data_prep.py $dump_norm_dir/$s/out_acoustic $output_dir --test_set
+
+#	    in_dir=$expdir/nsf/test_input_dirs
+        else
+
+	    #	    python utils/nsf_data_prep.py $dump_norm_dir/$s/out_acoustic $output_dir --relative_f0
+	    python utils/nsf_data_prep.py $dump_norm_dir/$s/out_acoustic $output_dir
+
+#	    out_dir=$expdir/nsf/output_dirs
+#	    mkdir -p $out_dir
+#	    for i in $(ls $dump_norm_dir/$s/out_acoustic/*-wave.npy);
+#	    do 
+#		j=$(basename $i); 
+#		cp $i $out_dir/${j%-wave.npy}.npy; 
+#	    done
+#	    python utils/npy2wav.py $dump_norm_dir/$s/out_acoustic $out_dir
+#	    in_dir=$expdir/nsf/input_dirs
+	fi
+#	mkdir -p $in_dir
+#	python utils/split_acoustic_features.py $dump_norm_dir/$s/out_acoustic $in_dir --relative_f0
+
     done
 fi
