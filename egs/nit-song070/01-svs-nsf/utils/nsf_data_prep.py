@@ -124,6 +124,10 @@ for feat_file in feats_files:
                                                      add_frame_features=True,
                                                      subphone_features="coarse_coding")
         f0_score = _midi_to_hz(linguistic_features, pitch_idx, False)[:, None]
+        if len(f0_score) > len(diff_lf0):
+            print("Warning! likely to have mistakes in alignment in {}".format(label_path))
+            print(f0_score.shape, diff_lf0.shape)
+            f0_score = f0_score[:len(diff_lf0)]        
         lf0_score = f0_score.copy()
         nonzero_indices = np.nonzero(lf0_score)
         lf0_score[nonzero_indices] = np.log(f0_score[nonzero_indices])
