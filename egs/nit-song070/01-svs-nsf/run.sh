@@ -235,6 +235,7 @@ if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
         mkdir -p downloads
         cd downloads
 	git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
+	cd $script_dir
     fi
     
 fi
