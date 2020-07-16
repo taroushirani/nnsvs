@@ -8,10 +8,11 @@ import numpy as np
 import librosa
 import soundfile as sf
 import joblib
+import torch
 from nnmnkwii.io import hts
 from nnmnkwii.frontend import merlin as fe
 from nnmnkwii.preprocessing.f0 import interp1d
-from nnsvs.multistream import multi_stream_mlpg, get_static_stream_sizes, split_streams
+from nnsvs.multistream import get_static_stream_sizes, split_streams
 
 def _midi_to_hz(x, idx, log_f0=False):
     z = np.zeros(len(x))
@@ -38,7 +39,7 @@ def get_parser():
         description="Data preparation script for NSF",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("in_dir", type=str, help="Input directory of the normalized song data and acoustic features")
+    parser.add_argument("in_dir", type=str, help="Input directory of the original(not normalized) song data and acoustic features")
     parser.add_argument("out_dir", type=str, help="Output directory")
     parser.add_argument("--test_set",   action='store_true', help="enable test_set data flag")
     parser.add_argument("--question_path", type=str, help="Path of .qst file", default="./conf/jp_qst001_nnsvs.hed")
@@ -46,7 +47,6 @@ def get_parser():
     parser.add_argument("--stream_sizes",   type=list, default=[180,3,1,3])
     parser.add_argument("--has_dynamic_features", type=list, default=[True,True,False,True])
     parser.add_argument("--num_windows",   type=int, default=3)
-    parser.add_argument("--acoustic_out_scaler", type=str, default="./dump/yoko/norm/out_acoustic_scaler.joblib")
     parser.add_argument("--sample_rate", type=int, default=16000)
 
     return parser
@@ -63,13 +63,36 @@ relative_f0=args.relative_f0
 stream_sizes=args.stream_sizes
 has_dynamic_features=args.has_dynamic_features
 num_windows=args.num_windows
-acoustic_out_scaler=joblib.load(args.acoustic_out_scaler)
 sample_rate=args.sample_rate
 
 
 binary_dict, continuous_dict = hts.load_question_set(question_path, append_hat_for_LL=False)
 pitch_idx=len(binary_dict)+1
 
+def get_static_features(inputs, num_windows, stream_sizes=[180,3,1,3],
+                        has_dynamic_features=[True, True, False, True],
+                        streams=[True, True, True, True]):
+    """Get static features from static+dynamic features.
+    """
+    T, D = inputs.shape
+    if stream_sizes is None or (len(stream_sizes) == 1 and has_dynamic_features[0]):
+        return inputs[:, :D // num_windows]
+    if len(stream_sizes) == 1 and not has_dynamic_features[0]:
+        return inputs
+
+    # Multi stream case
+    ret = []
+    start_indices = np.hstack(([0], np.cumsum(stream_sizes)[:-1]))
+    for start_idx, size, v, enabled in zip(
+            start_indices, stream_sizes, has_dynamic_features, streams):
+        if not enabled:
+            continue
+        if v:
+            static_features = inputs[:, start_idx:start_idx + size // num_windows]
+        else:
+            static_features = inputs[:, start_idx:start_idx + size]
+        ret.append(static_features)
+    return np.concatenate(ret, -1)
 
 feats_files = sorted(glob(join(in_dir, "*-feats.npy")))
 for feat_file in feats_files:
@@ -80,21 +103,22 @@ for feat_file in feats_files:
     acoustic_features = np.load(feat_file)
 
     windows = get_windows(num_windows)
-
     if np.any(has_dynamic_features):
-        acoustic_features = multi_stream_mlpg(
-            acoustic_features, acoustic_out_scaler.var_, windows, stream_sizes,
-            has_dynamic_features)
+        acoustic_features = get_static_features(acoustic_features, num_windows, stream_sizes, has_dynamic_features)
         static_stream_sizes = get_static_stream_sizes(
-            stream_sizes, has_dynamic_features, len(windows))
+            stream_sizes, has_dynamic_features, num_windows)
     else:
         static_stream_sizes = stream_sizes
         
     mgc, target_f0, vuv, bap = split_streams(acoustic_features, static_stream_sizes)
-
+    print(mgc.shape)
+    print(target_f0.shape)
+    print(vuv.shape)
+    print(bap.shape)
+    print(target_f0)
     if relative_f0:
         diff_lf0 = target_f0
-#        print(diff_lf0.max())
+        print(diff_lf0.max())
         # need to extract pitch sequence from the musical score
         linguistic_features = fe.linguistic_features(labels, binary_dict, continuous_dict,
                                                      add_frame_features=True,
@@ -103,42 +127,42 @@ for feat_file in feats_files:
         lf0_score = f0_score.copy()
         nonzero_indices = np.nonzero(lf0_score)
         lf0_score[nonzero_indices] = np.log(f0_score[nonzero_indices])
-#        lf0_score = interp1d(lf0_score, kind="slinear")
+        lf0_score = interp1d(lf0_score, kind="slinear")
         f0 = diff_lf0 + lf0_score
         f0[vuv < 0.5] = 0
         f0[np.nonzero(f0)] = np.exp(f0[np.nonzero(f0)])
     else:
         f0 = target_f0
 
-#    output_path = join(out_dir, base + ".dlf0")
-#    with open(output_path, "wb") as f:
-#        np.save(f, diff_lf0)
-
-#    output_path = join(out_dir, base + ".sf0")
-#    with open(output_path, "wb") as f:
-#        np.save(f, f0_score)
-
-#    output_path = join(out_dir, base + ".slf0")
-#    with open(output_path, "wb") as f:
-#        np.save(f, lf0_score)
-        
-#    print(f0.shape)
-#    print(f0.dtype)
     if test_set:
         feats_out_dir = join(out_dir , "test_input_dirs")
     else:
         feats_out_dir = join(out_dir , "input_dirs")
     if exists(feats_out_dir) != True:
         os.makedirs(feats_out_dir)
+
+#    output_path = join(feats_out_dir, base + ".dlf0")
+#    with open(output_path, "wb") as f:
+#        np.save(f, diff_lf0)
+
+#    output_path = join(feats_out_dir, base + ".sf0")
+#    with open(output_path, "wb") as f:
+#        np.save(f, f0_score)
+
+#    output_path = join(feats_out_dir, base + ".slf0")
+#    with open(output_path, "wb") as f:
+#        np.save(f, lf0_score)
         
-    f0_output_path = join(feats_out_dir, base + ".f0")
-    with open(f0_output_path, "wb") as f:
+    with open(join(feats_out_dir, base + ".f0"), "wb") as f:
         np.save(f, f0.astype(np.float32))
-#    print(mgc.shape)
-#    print(mgc.dtype)
-    other_feats_output_path = join(feats_out_dir, base + ".npy")
-    with open(other_feats_output_path, "wb") as f:
-        np.save(f, np.hstack((mgc, vuv, bap)))
+#    with open(join(feats_out_dir, base + ".mgc"), "wb") as f:
+#        np.save(f, mgc.astype(np.float32))
+#    with open(join(feats_out_dir, base + ".bap"), "wb") as f:
+#        np.save(f, bap.astype(np.float32))
+    
+#    other_feats_output_path = join(feats_out_dir, base + ".npy")
+#    with open(other_feats_output_path, "wb") as f:
+#        np.save(f, np.hstack((mgc, vuv, bap)))
         
 if test_set != True:          
     wave_files = sorted(glob(join(in_dir, "*-wave.npy")))
