@@ -93,7 +93,9 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     for s in ${datasets[@]};
     do
       nnsvs-prepare-features utt_list=data/list/$s.list out_dir=$dump_org_dir/$s/  \
-			     question_path=$question_path 
+			     question_path=$question_path \
+			     acoustic.use_harvest=false
+      
     done
 
     # Compute normalization stats for each input/output
