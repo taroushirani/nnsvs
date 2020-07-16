@@ -141,8 +141,22 @@ class WORLDAcousticSource(FileDataSource):
         x = x.astype(np.float64)
 
         if self.use_harvest:
-            f0, timeaxis = pyworld.harvest(x, fs, frame_period=self.frame_period,
-            f0_floor=min_f0, f0_ceil=max_f0)
+#            f0, timeaxis = pyworld.harvest(x, fs, frame_period=self.frame_period,
+#            f0_floor=min_f0, f0_ceil=max_f0)
+            import amfm_decompy.pYAAPT as pYAAPT
+            import amfm_decompy.basic_tools as basic
+            signal = basic.SignalObj(wav_path)
+            print(min_f0, max_f0)
+            min_f0 = min(150, min_f0) # TODO: Fix this property
+
+            # Fix pitch halving/doubling erro
+            pYAAPT.PitchObj.PITCH_DOUBLE = 2 
+            pYAAPT.PitchObj.PITCH_HALF = 2
+
+            pitch = pYAAPT.yaapt(signal, f0_min=min_f0, f0_max=max_f0, frame_length=25, frame_space=5)
+            f0 = pitch.samp_values.astype(np.float64)
+            timeaxis = np.linspace(0, (pitch.samp_values.shape[0] -1) * 0.005, len(pitch.samp_values))
+
         else:
             f0, timeaxis = pyworld.dio(x, fs, frame_period=self.frame_period,
                 f0_floor=min_f0, f0_ceil=max_f0)
