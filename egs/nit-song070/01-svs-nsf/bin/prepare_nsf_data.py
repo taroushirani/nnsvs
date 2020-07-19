@@ -12,6 +12,8 @@ import librosa
 import soundfile as sf
 import torch
 
+from tqdm import tqdm
+
 from nnmnkwii.io import hts
 from nnmnkwii.frontend import merlin as fe
 from nnmnkwii.preprocessing.f0 import interp1d
@@ -49,10 +51,12 @@ def my_app(config : DictConfig) -> None:
 
     binary_dict, continuous_dict = hts.load_question_set(question_path, append_hat_for_LL=False)
     pitch_idx=len(binary_dict)+1
+
     feats_files = sorted(glob(join(in_dir, "*-feats.npy")))
-    for feat_file in feats_files:
+    logger.info(f"Process {len(feats_files)} feature files for NSF.")
+    for idx in tqdm(range(len(feats_files))):
+        feat_file=feats_files[idx]
         utt_id = splitext(basename(feat_file))[0].replace("-feats", "")
-        print(utt_id)
         label_path= join(label_dir, utt_id + ".lab")
         labels = hts.load(label_path)
 
@@ -71,7 +75,6 @@ def my_app(config : DictConfig) -> None:
 
         if relative_f0:
             diff_lf0 = target_f0
-            print(diff_lf0.max())
             # need to extract pitch sequence from the musical score
             linguistic_features = fe.linguistic_features(labels, binary_dict, continuous_dict,
                                                          add_frame_features=True,
@@ -108,9 +111,11 @@ def my_app(config : DictConfig) -> None:
         with open(join(feats_out_dir, utt_id + ".bap"), "wb") as f:
             np.save(f, bap.astype(np.float32))
     
-    if test_set != True:          
+    if test_set != True:
         wave_files = sorted(glob(join(in_dir, "*-wave.npy")))
-        for wave_file in wave_files:
+        logger.info(f"Process {len(wave_files)} wave files for NSF.")
+        for idx in tqdm(range(len(wave_files))):
+            wave_file=wave_files[idx]
             utt_id = splitext(basename(wave_file))[0].replace("-wave", "")
                         
             data = np.load(wave_file)

@@ -4,7 +4,6 @@ defaults:
   - hydra/hydra_logging: colorlog
 verbose: 100
 
-out_dir:
 nsf_root_dir:
 nsf_type: hn-sinc-nsf
   

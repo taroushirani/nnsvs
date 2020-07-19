@@ -19,12 +19,6 @@ pretrained_expdir=
 
 batch_size=4
 
-sample_rate=16000
-# The bap(Band Aperiodic-ity) dimension of 16kHz is 3 and differs from that of 48kHz(15).
-acoustic_model_stream_sizes=[180,3,1,3]
-# 180+3+1+3
-acoustic_model_out_dim=187
-
 stage=0
 stop_stage=0
 
@@ -61,6 +55,17 @@ else
     expname=${spk}_${tag}
 fi
 expdir=exp/$expname
+
+# NSF related settings.
+sample_rate=16000
+# The bap(Band Aperiodic-ity) dimension of 16kHz is 3 and differs from that of 48kHz(15).
+acoustic_model_stream_sizes=[180,3,1,3]
+# 180+3+1+3
+acoustic_model_out_dim=187
+
+nsf_root_dir=
+nsf_save_model_dir=$expdir/nsf/train_outputs
+nsf_pretrained_model=$nsf_save_model_dir/trained_network.pt
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
     if [ ! -e downloads/HTS-demo_NIT-SONG070-F001 ]; then
@@ -201,6 +206,12 @@ fi
 
 if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
     echo "stage 6: Synthesis waveforms"
+    if [ ! -e $nsf_pretrained_model ]; then
+	echo "No NSF pretrained model found."
+	echo "Please download pretrained model from or run stage 7-9."
+	exit 1
+    fi
+
     for s in ${testsets[@]}; do
         for input in label_phone_score label_phone_align; do
             if [ $input = label_phone_score ]; then
@@ -229,33 +240,60 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             ground_truth_duration=$ground_truth_duration \
 	    sample_rate=$sample_rate \
 	    nsf_root_dir=downloads/project-NN-Pytorch-scripts/ \
-	    nsf.args.save_model_dir=nsf/outputs 
+	    nsf.args.save_model_dir=$nsf_save_model_dir
         done
     done
 fi
 
 if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
-    if [ ! -e downloads/project-NN-Pytorch-scripts/ ]; then
-	echo "stage 7: Download NSF"
-        mkdir -p downloads
-        cd downloads
-	git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
-	cd $script_dir
+    if [ -n $nsf_root_dir ]; then
+	nsf_root_dir="downloads/project-NN-Pytorch-scripts/"
+	if [ ! -e $nsf_root_dir ]; then
+	    echo "stage 7: Download NSF"
+            mkdir -p downloads
+            cd downloads
+	    git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
+	    cd $script_dir
+	fi
     fi
-    
 fi
 
 if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
     echo "stage 8: Prepare data for NSF"
-    output_dir=$expdir/nsf
-    mkdir -p $output_dir
+    out_dir=$expdir/nsf2
+    mkdir -p $out_dir
     for s in ${datasets[@]};
     do
         if [ $s = $eval_set ]; then
-	    python utils/nsf_data_prep.py $dump_org_dir/$s/out_acoustic $output_dir --relative_f0 --test_set
+	    xrun python bin/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir test_set=true
         else
-
-	    python utils/nsf_data_prep.py $dump_org_dir/$s/out_acoustic $output_dir --relative_f0
+	    xrun python bin/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir
 	fi
     done
+fi
+
+
+if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
+    echo "stage 9: Training NSF model"
+    if [ -n $nsf_root_dir ]; then
+	nsf_root_dir="downloads/project-NN-Pytorch-scripts/"
+	if [ ! -e $nsf_root_dir ]; then
+	    echo "No NSF files found. Please set nsf_root_dir properly or run stage 7."
+	    exit 1
+	fi
+    fi
+
+    in_dir=$expdir/nsf2/input_dirs
+    out_dir=$expdir/nsf2/output_dirs
+    mkdir -p $out_dir
+    mkdir -p $nsf_save_model_dir
+    xrun python python bin/train_nsf.py \
+	 nsf_root_dir=downloads/project-NN-Pytorch-scripts/ \
+	 nsf_type=hn-sinc-nsf \
+	 nsf.args.batch_size=1 \
+	 nsf.args.epochs=500 \
+	 nsf.args.no_best_epochs=20 \
+	 nsf.args.save_model_dir=$nsf_save_model_dir \
+	 nsf.model.input_dirs=["$in_dir", "$in_dir", "in_dir"]\
+	 nsf.model.output_dirs=["$out_dir"] 
 fi
