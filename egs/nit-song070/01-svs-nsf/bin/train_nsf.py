@@ -116,10 +116,10 @@ def my_app(config : DictConfig) -> None:
             
             # start training
         logger.info(f"Start {config.nsf_type} training. This may take several days.")
-        #    nii_nn_wrapper.f_train_wrapper(config.nsf, model, 
-        #                                   loss_wrapper, device,
-        #                                   optimizer_wrapper,
-        #                                   train_set, val_set, checkpoint)
+        nii_nn_wrapper.f_train_wrapper(config.nsf.args, model, 
+                                       loss_wrapper, device,
+                                       optimizer_wrapper,
+                                       train_set, val_set, checkpoint)
     else:
         # for inference
 
