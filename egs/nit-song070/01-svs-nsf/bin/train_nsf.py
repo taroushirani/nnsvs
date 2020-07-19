@@ -7,6 +7,7 @@ import os
 from os.path import exists, join, splitext
 import sys
 import torch
+import copy
 
 from nnsvs.logger import getLogger
 logger = None
@@ -58,13 +59,23 @@ def my_app(config : DictConfig) -> None:
         input_dirs = [to_absolute_path(x) for x in config.nsf.model.input_dirs]
         output_dirs = [to_absolute_path(x) for x in config.nsf.model.output_dirs]
 
+        # If we pass config.nsf.model.input_* to NIIDataSet.f_calculate_stats(), 
+        # it will overwrite them because it assumes them as List object, not "ListConfig" 
+        # object(This mismatch results from the adaption of Hydra instead of simple config.py).
+        # To avoid this, deepcopies of input_* are created.
+        # FIXME
+        input_exts = copy.deepcopy(config.nsf.model.input_exts)
+        input_dims = copy.deepcopy(config.nsf.model.input_dims)
+        input_reso = copy.deepcopy(config.nsf.model.input_reso)
+        input_norm = copy.deepcopy(config.nsf.model.input_norm)
+
         train_set = nii_dset.NIIDataSetLoader("train_no_dev",
                                               train_list, 
                                               input_dirs,
-                                              config.nsf.model.input_exts, 
-                                              config.nsf.model.input_dims, 
-                                              config.nsf.model.input_reso, 
-                                              config.nsf.model.input_norm, 
+                                              input_exts, 
+                                              input_dims, 
+                                              input_reso, 
+                                              input_norm, 
                                               output_dirs,
                                               config.nsf.model.output_exts, 
                                               config.nsf.model.output_dims, 
@@ -79,13 +90,25 @@ def my_app(config : DictConfig) -> None:
 
         val_list_path = to_absolute_path(config.data.dev.list_path)
         val_list = nii_list_tool.read_list_from_text(val_list_path)
+
+        # If we pass config.nsf.model.input_* to NIIDataSet.f_calculate_stats(), 
+        # it will overwrite them because it assumes them as List object, not "ListConfig" 
+        # object(This mismatch results from the adaption of Hydra instead of simple config.py).
+        # To avoid this, deepcopies of input_* are created.
+        # FIXME
+
+        input_exts = copy.deepcopy(config.nsf.model.input_exts)
+        input_dims = copy.deepcopy(config.nsf.model.input_dims)
+        input_reso = copy.deepcopy(config.nsf.model.input_reso)
+        input_norm = copy.deepcopy(config.nsf.model.input_norm)
+
         val_set = nii_dset.NIIDataSetLoader("dev",
                                             val_list,
                                             input_dirs,
-                                            config.nsf.model.input_exts,
-                                            config.nsf.model.input_dims,
-                                            config.nsf.model.input_reso,
-                                            config.nsf.model.input_norm,
+                                            input_exts,
+                                            input_dims,
+                                            input_reso,
+                                            input_norm,
                                             output_dirs,
                                             config.nsf.model.output_exts,
                                             config.nsf.model.output_dims,
@@ -132,6 +155,16 @@ def my_app(config : DictConfig) -> None:
         test_list_path = to_absolute_path(config.data.eval.list_path)
         test_list = nii_list_tool.read_list_from_text(test_list_path)
 
+        # If we pass config.nsf.model.input_* to NIIDataSet.f_calculate_stats(), 
+        # it will overwrite them because it assumes them as List object, not "ListConfig" 
+        # object(This mismatch results from the adaption of Hydra instead of simple config.py).
+        # To avoid this, deepcopies of input_* are created.
+        # FIXME
+        input_exts = copy.deepcopy(config.nsf.model.input_exts)
+        input_dims = copy.deepcopy(config.nsf.model.input_dims)
+        input_reso = copy.deepcopy(config.nsf.model.input_reso)
+        input_norm = copy.deepcopy(config.nsf.model.input_norm)
+
         test_input_dirs = [to_absolute_path(x) for x in config.nsf.model.test_input_dirs]
         # Overwrite output_dir setting
         logger.info(f"NSF setting of config.nsf.args.output_dir is overwritten with {config.nsf.model.test_output_dirs} by NNSVS.")
@@ -142,10 +175,10 @@ def my_app(config : DictConfig) -> None:
         test_set = nii_dset.NIIDataSetLoader("eval",
                                              test_list, 
                                              test_input_dirs,
-                                             config.nsf.model.input_exts, 
-                                             config.nsf.model.input_dims, 
-                                             config.nsf.model.input_reso, 
-                                             config.nsf.model.input_norm, 
+                                             input_exts, 
+                                             input_dims, 
+                                             input_reso, 
+                                             input_norm, 
                                              [],
                                              config.nsf.model.output_exts, 
                                              config.nsf.model.output_dims, 
