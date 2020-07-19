@@ -12,7 +12,6 @@ nsf_type: hn-sinc-nsf
 device: cuda # or cpu
 
 # Only the combination of utt_list and in_dir input is supported
-# Output dir 
 utt_list:
 in_dir:
 out_dir:

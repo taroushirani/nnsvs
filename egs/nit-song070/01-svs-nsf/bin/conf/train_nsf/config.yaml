@@ -14,7 +14,10 @@ data:
   #development set
   dev:
     list_path: data/list/dev.list
-
+  #evaluation set
+  eval:
+    list_path: data/list/eval.list
+    
 nsf:
   args:
     # NSF default settings
@@ -34,7 +37,9 @@ nsf:
     save_trained_name: "trained_network"
     save_model_ext: ".pt"
     trained_model:
-    inference: true
+    inference: false
+    # Caution. output directory setting of NSF will be overwritten by NNSVS,
+    # output_dir will be never used.
     output_dir: "./output"
     optimizer: Adam
     verbose: 1
@@ -75,4 +80,8 @@ nsf:
     #  minimum_len can be None
     # resolution * minimum frames(for rexample 4000 = 80(sample/frame) * 50(frame)
     minimum_len: 4000
-      
+    # Directories for test input features
+    # test_input_dirs = [path_of_feature_1, path_of_feature_2, ..., ]
+    test_input_dirs: ["nsf/test_input_dirs", "nsf/test_input_dirs", "nsf/test_input_dirs"]
+    # test_output_dirs is used to store synthesized waves at inference.
+    test_output_dirs: []

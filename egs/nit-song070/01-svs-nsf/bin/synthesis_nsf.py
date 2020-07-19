@@ -174,7 +174,7 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
 
     import model as nsf_model
 
-    # Override output_dir setting
+    # Overwrite output_dir setting
     logger.info(f"NSF setting of config.nsf.args.output_dir is overwritten with {output_dir} by NNSVS.")
     
     config.nsf.args.output_dir = to_absolute_path(output_dir)
@@ -229,7 +229,7 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
             raise Exception("No trained model found")
         checkpoint = torch.load(default_trained_model_path)
     else:
-        checkpoint = torch.load(config.nsf.args.trained_model)
+        checkpoint = torch.load(to_absolute_path(config.nsf.args.trained_model))
 
     # do inference and output data
     nii_nn_wrapper.f_inference_wrapper(config.nsf.args, model, device,

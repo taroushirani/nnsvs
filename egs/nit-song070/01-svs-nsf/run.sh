@@ -283,17 +283,31 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
 	fi
     fi
 
-    in_dir=$expdir/nsf2/input_dirs
-    out_dir=$expdir/nsf2/output_dirs
-    mkdir -p $out_dir
+    input_dirs=$expdir/nsf2/input_dirs
+    output_dirs=$expdir/nsf2/output_dirs
+    mkdir -p $output_dirs
     mkdir -p $nsf_save_model_dir
-    xrun python python bin/train_nsf.py \
-	 nsf_root_dir=downloads/project-NN-Pytorch-scripts/ \
+    xrun python bin/train_nsf.py \
+	 nsf_root_dir=$nsf_root_dir \
 	 nsf_type=hn-sinc-nsf \
 	 nsf.args.batch_size=1 \
 	 nsf.args.epochs=500 \
 	 nsf.args.no_best_epochs=20 \
 	 nsf.args.save_model_dir=$nsf_save_model_dir \
-	 nsf.model.input_dirs=["$in_dir", "$in_dir", "in_dir"]\
-	 nsf.model.output_dirs=["$out_dir"] 
+	 nsf.model.input_dirs=["$input_dirs","$input_dirs","$input_dirs"]\
+	 nsf.model.output_dirs=["$output_dirs"]
+
+    # for inference
+    test_input_dirs=$expdir/nsf2/test_input_dirs
+    test_output_dirs=$expdir/nsf2/test_output_dirs
+    mkdir -p $test_output_dirs
+    xrun python bin/train_nsf.py \
+	 nsf_root_dir=$nsf_root_dir \
+	 nsf_type=hn-sinc-nsf \
+	 nsf.args.batch_size=1 \
+	 nsf.args.save_model_dir=$nsf_save_model_dir \
+	 nsf.args.inference=true \
+	 nsf.model.test_input_dirs=["$test_input_dirs","$test_input_dirs","$test_input_dirs"]\
+	 nsf.model.test_output_dirs=$test_output_dirs
+
 fi
