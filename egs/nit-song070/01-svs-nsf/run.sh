@@ -63,9 +63,9 @@ acoustic_model_stream_sizes=[180,3,1,3]
 # 180+3+1+3
 acoustic_model_out_dim=187
 
-nsf_root_dir=
+nsf_root_dir=downloads/project-NN-Pytorch-scripts/
 nsf_save_model_dir=$expdir/nsf/train_outputs
-nsf_pretrained_model=$nsf_save_model_dir/trained_network.pt
+nsf_pretrained_model=
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
     if [ ! -e downloads/HTS-demo_NIT-SONG070-F001 ]; then
@@ -208,7 +208,7 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
     echo "stage 6: Synthesis waveforms"
     if [ ! -e $nsf_pretrained_model ]; then
 	echo "No NSF pretrained model found."
-	echo "Please download pretrained model from or run stage 7-9."
+	echo "Please run stage 7-9 or download pretrained model from somewhare."
 	exit 1
     fi
 
@@ -238,23 +238,20 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             in_dir=data/acoustic/$input/ \
             out_dir=$expdir/synthesis/$s/latest/$input \
             ground_truth_duration=$ground_truth_duration \
-	    sample_rate=$sample_rate \
 	    nsf_root_dir=downloads/project-NN-Pytorch-scripts/ \
-	    nsf.args.save_model_dir=$nsf_save_model_dir
+	    nsf.args.save_model_dir=$nsf_save_model_dir \
+        nsf.args.trained_model=$nsf_pretrained_model
         done
     done
 fi
 
 if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
-    if [ -n $nsf_root_dir ]; then
-	nsf_root_dir="downloads/project-NN-Pytorch-scripts/"
-	if [ ! -e $nsf_root_dir ]; then
-	    echo "stage 7: Download NSF"
-            mkdir -p downloads
-            cd downloads
-	    git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
-	    cd $script_dir
-	fi
+    if [ ! -e $nsf_root_dir ]; then
+	echo "stage 7: Download NSF"
+        mkdir -p downloads
+        cd downloads
+	git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
+	cd $script_dir
     fi
 fi
 
@@ -272,15 +269,11 @@ if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
     done
 fi
 
-
 if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
     echo "stage 9: Training NSF model"
-    if [ -n $nsf_root_dir ]; then
-	nsf_root_dir="downloads/project-NN-Pytorch-scripts/"
-	if [ ! -e $nsf_root_dir ]; then
-	    echo "No NSF files found. Please set nsf_root_dir properly or run stage 7."
-	    exit 1
-	fi
+    if [ ! -e $nsf_root_dir ]; then
+	echo "No NSF files found. Please set nsf_root_dir properly or run stage 7."
+	exit 1
     fi
 
     input_dirs=$expdir/nsf/input_dirs
@@ -296,6 +289,14 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
 	 nsf.args.save_model_dir=$nsf_save_model_dir \
 	 nsf.model.input_dirs=["$input_dirs","$input_dirs","$input_dirs"]\
 	 nsf.model.output_dirs=["$output_dirs"]
+fi
+
+if [ ${stage} -le 10 ] && [ ${stop_stage} -ge 10 ]; then
+    echo "stage 10: Evaluating NSF model"
+    if [ ! -e $nsf_root_dir ]; then
+	echo "No NSF files found. Please set nsf_root_dir properly or run stage 7."
+	exit 1
+    fi
 
     # for inference
     test_input_dirs=$expdir/nsf/test_input_dirs
@@ -306,6 +307,7 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
 	 nsf_type=hn-sinc-nsf \
 	 nsf.args.batch_size=1 \
 	 nsf.args.save_model_dir=$nsf_save_model_dir \
+	 nsf.args.trained_model=$nsf_pretrained_model \
 	 nsf.args.inference=true \
 	 nsf.model.test_input_dirs=["$test_input_dirs","$test_input_dirs","$test_input_dirs"]\
 	 nsf.model.test_output_dirs=$test_output_dirs
