@@ -205,6 +205,7 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_in_scaler,
 
     return pred_acoustic
 
+
 def gen_waveform(labels, acoustic_features, acoustic_out_scaler,
         binary_dict, continuous_dict, stream_sizes, has_dynamic_features,
         subphone_features="coarse_coding", log_f0_conditioning=True, pitch_idx=None,
@@ -265,5 +266,5 @@ def gen_waveform(labels, acoustic_features, acoustic_out_scaler,
                                             spectrogram.astype(np.float64),
                                             aperiodicity.astype(np.float64),
                                             sample_rate, frame_period)
-    return generated_waveform
 
+    return generated_waveform
