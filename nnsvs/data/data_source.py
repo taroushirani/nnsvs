@@ -161,7 +161,11 @@ class WORLDAcousticSource(FileDataSource):
             f0, timeaxis = pyworld.dio(x, fs, frame_period=self.frame_period,
                 f0_floor=min_f0, f0_ceil=max_f0)
             f0 = pyworld.stonemask(x, f0, timeaxis, fs)
-        spectrogram = pyworld.cheaptrick(x, f0, timeaxis, fs, f0_floor=self.f0_floor)
+
+        # Workaround for https://github.com/r9y9/nnsvs/issues/7
+        f0 = np.maximum(f0, 0)
+
+        spectrogram = pyworld.cheaptrick(x, f0, timeaxis, fs, f0_floor=min_f0)
         aperiodicity = pyworld.d4c(x, f0, timeaxis, fs)
 
         mgc = pysptk.sp2mc(spectrogram, order=self.mgc_order,
