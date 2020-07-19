@@ -189,27 +189,28 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
               'shuffle':  config.nsf.args.shuffle,
               'num_workers': config.nsf.args.num_workers}
 
-    # Load file list and create data loader
-    save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+    # fix config.nsf.args.save_model_dir 
+    logger.info(f"NSF setting of config.nsf.args.save_model_dir is converted to absolute path {config.nsf.model.test_output_dirs} by NNSVS.")
+    config.nsf.args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
     
     test_set = nii_dset.NIIDataSetLoader("eval",
-                                          utt_list, 
-                                          [input_dir] * 3,
-                                          config.nsf.model.input_exts, 
-                                          config.nsf.model.input_dims, 
-                                          config.nsf.model.input_reso, 
-                                          config.nsf.model.input_norm, 
-                                          [],
-                                          config.nsf.model.output_exts, 
-                                          config.nsf.model.output_dims, 
-                                          config.nsf.model.output_reso, 
-                                          config.nsf.model.output_norm, 
-                                          save_model_dir, 
-                                          params = params,
-                                          truncate_seq = None,
-                                          min_seq_len = None,
-                                          save_mean_std = False,
-                                          wav_samp_rate = config.nsf.model.wav_samp_rate)
+                                         utt_list, 
+                                         [input_dir] * 3,
+                                         config.nsf.model.input_exts, 
+                                         config.nsf.model.input_dims, 
+                                         config.nsf.model.input_reso, 
+                                         config.nsf.model.input_norm, 
+                                         [],
+                                         config.nsf.model.output_exts, 
+                                         config.nsf.model.output_dims, 
+                                         config.nsf.model.output_reso, 
+                                         config.nsf.model.output_norm, 
+                                         config.nsf.args.save_model_dir,
+                                         params = params,
+                                         truncate_seq = None,
+                                         min_seq_len = None,
+                                         save_mean_std = False,
+                                         wav_samp_rate = config.nsf.model.wav_samp_rate)
 
 
     # Initialize the model and loss function
