@@ -42,7 +42,7 @@ def my_app(config : DictConfig) -> None:
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # fix config.nsf.args.save_model_dir 
-    logger.info(f"NSF setting of config.nsf.args.save_model_dir is converted to absolute path {config.nsf.model.test_output_dirs} by NNSVS.")
+    logger.info(f"config.nsf.args.save_model_dir is converted to absolute path by NNSVS.")
     config.nsf.args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
     
     if not config.nsf.args.inference:
@@ -114,7 +114,7 @@ def my_app(config : DictConfig) -> None:
         if not config.nsf.args.trained_model:
             checkpoint = None 
         else:
-            checkpoint = torch.load(config.nsf.args.trained_model)
+            checkpoint = torch.load(to_absolute_path(config.nsf.args.trained_model))
             
             # start training
         logger.info(f"Start {config.nsf_type} training. This may take several days.")
