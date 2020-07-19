@@ -208,7 +208,8 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             else
                 ground_truth_duration=true
             fi
-            xrun nnsvs-synthesis question_path=conf/jp_qst001_nnsvs.hed \
+	    #            xrun nnsvs-synthesis question_path=conf/jp_qst001_nnsvs.hed \
+            xrun python bin/synthesis_nsf.py question_path=conf/jp_qst001_nnsvs.hed \
             timelag.checkpoint=$expdir/timelag/latest.pth \
             timelag.in_scaler_path=$dump_norm_dir/in_timelag_scaler.joblib \
             timelag.out_scaler_path=$dump_norm_dir/out_timelag_scaler.joblib \
@@ -226,7 +227,9 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             in_dir=data/acoustic/$input/ \
             out_dir=$expdir/synthesis/$s/latest/$input \
             ground_truth_duration=$ground_truth_duration \
-	        sample_rate=$sample_rate
+	    sample_rate=$sample_rate \
+	    nsf_root_dir=downloads/project-NN-Pytorch-scripts/ \
+	    nsf.args.save_model_dir=nsf/outputs 
         done
     done
 fi

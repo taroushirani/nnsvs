@@ -1,0 +1,128 @@
+# coding: utf-8
+import hydra
+from hydra.utils import to_absolute_path
+from omegaconf import DictConfig
+
+import os
+from os.path import exists, join, splitext
+import sys
+import torch
+
+from nnsvs.logger import getLogger
+logger = None
+
+@hydra.main(config_path="conf/train_nsf/config.yaml")
+def my_app(config : DictConfig) -> None:
+    global logger
+    logger = getLogger(config.verbose)
+    logger.info(config.pretty())
+
+    assert config.nsf_root_dir
+    nsf_root_dir = to_absolute_path(config.nsf_root_dir)
+    sys.path.append(nsf_root_dir)
+    import core_scripts.data_io.default_data_io as nii_dset
+    import core_scripts.other_tools.list_tools as nii_list_tool
+    import core_scripts.op_manager.op_manager as nii_op_wrapper
+    import core_scripts.nn_manager.nn_manager as nii_nn_wrapper
+
+    if config.nsf_type == "hn-sinc-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/hn-sinc-nsf-9")))
+    elif config.nsf_type == "hn-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/hn-nsf")))
+    elif config.nsf_type == "cyc-noise-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/cyc-noise-nsf-4")))
+    else:
+        raise Exception(f"Unknown NSF type: {config.nsf_type}")
+
+    import model as nsf_model
+    
+    # initialization
+    torch.manual_seed(config.nsf.args.seed)
+    use_cuda = not config.nsf.args.no_cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    # prepare data io    
+    params = {'batch_size':  config.nsf.args.batch_size,
+              'shuffle':  config.nsf.args.shuffle,
+              'num_workers': config.nsf.args.num_workers}
+
+    # Load file list and create data loader
+    train_list_path = to_absolute_path(config.data.train_no_dev.list_path)
+    train_list = nii_list_tool.read_list_from_text(train_list_path)
+
+    input_dirs = [to_absolute_path(x) for x in config.nsf.model.input_dirs]
+    output_dirs = [to_absolute_path(x) for x in config.nsf.model.output_dirs]
+
+    save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+
+    train_set = nii_dset.NIIDataSetLoader("train_no_dev",
+                                          train_list, 
+                                          input_dirs,
+                                          config.nsf.model.input_exts, 
+                                          config.nsf.model.input_dims, 
+                                          config.nsf.model.input_reso, 
+                                          config.nsf.model.input_norm, 
+                                          output_dirs,
+                                          config.nsf.model.output_exts, 
+                                          config.nsf.model.output_dims, 
+                                          config.nsf.model.output_reso, 
+                                          config.nsf.model.output_norm, 
+                                          save_model_dir, 
+                                          params = params,
+                                          truncate_seq = config.nsf.model.truncate_seq, 
+                                          min_seq_len = config.nsf.model.minimum_len,
+                                          save_mean_std = True,
+                                          wav_samp_rate = config.nsf.model.wav_samp_rate)
+
+    val_list_path = to_absolute_path(config.data.dev.list_path)
+    val_list = nii_list_tool.read_list_from_text(val_list_path)
+    val_set = nii_dset.NIIDataSetLoader("dev",
+                                        val_list,
+                                        input_dirs,
+                                        config.nsf.model.input_exts,
+                                        config.nsf.model.input_dims,
+                                        config.nsf.model.input_reso,
+                                        config.nsf.model.input_norm,
+                                        output_dirs,
+                                        config.nsf.model.output_exts,
+                                        config.nsf.model.output_dims,
+                                        config.nsf.model.output_reso,
+                                        config.nsf.model.output_norm,
+                                        save_model_dir, 
+                                        params = params,
+                                        truncate_seq= config.nsf.model.truncate_seq, 
+                                        min_seq_len = config.nsf.model.minimum_len,
+                                        save_mean_std = False,
+                                        wav_samp_rate = config.nsf.model.wav_samp_rate)
+
+    # Initialize the model and loss function
+    # Originally nsf_mode.Model requires args as Namespace Object, not DictConfig object.
+    # But hydra uses ArgumentParser internally so we can't use nii_arg_parse.f_args_parsed().
+    # Ugly duck typing :(
+    model = nsf_model.Model(train_set.get_in_dim(),
+                            train_set.get_out_dim(), 
+                            config.nsf.args, train_set.get_data_mean_std())
+    loss_wrapper = nsf_model.Loss(config.nsf.args)
+
+    # initialize the optimizer
+    optimizer_wrapper = nii_op_wrapper.OptimizerWrapper(model, config.nsf.args)
+
+    # if necessary, resume training
+    if not config.nsf.trained_model:
+        checkpoint = None 
+    else:
+        checkpoint = torch.load(config.nsf.trained_model)
+            
+    # start training
+    logger.info(f"Start {config.nsf_type} training. This may take several days.")
+#    nii_nn_wrapper.f_train_wrapper(config.nsf, model, 
+#                                   loss_wrapper, device,
+#                                   optimizer_wrapper,
+#                                   train_set, val_set, checkpoint)
+
+def entry():
+    my_app()
+
+if __name__ == "__main__":
+    my_app()
+                            
