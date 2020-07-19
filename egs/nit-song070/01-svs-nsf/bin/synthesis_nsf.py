@@ -25,7 +25,7 @@ from nnsvs.gen import (
 from nnsvs.logger import getLogger
 logger = None
 
-# This function is originate from nnsvs/gen.py
+# This function is originated from nnsvs/gen.py
 def get_windows(num_window=1):
     windows = [(0, 0, np.array([1.0]))]
     if num_window >= 2:
@@ -38,7 +38,7 @@ def get_windows(num_window=1):
 
     return windows
 
-# This function is originate from nsvs/gen.py
+# This function is originated from nsvs/gen.py
 def _midi_to_hz(x, idx, log_f0=False):
     z = np.zeros(len(x))
     indices = x[:, idx] > 0
@@ -292,15 +292,15 @@ def my_app(config : DictConfig) -> None:
                 utt_list.append(l.strip())
                 
     logger.info(f"Processes {len(utt_list)} utterances...")
-#    for utt_id in utt_list:
-#        label_path = join(in_dir, f"{utt_id}.lab")
-#        if not exists(label_path):
-#            raise RuntimeError(f"Label file does not exist: {label_path}")
-#        dump_acoustic_features(config, device, label_path, question_path,
-#                               timelag_model, timelag_in_scaler, timelag_out_scaler,
-#                               duration_model, duration_in_scaler, duration_out_scaler,
-#                               acoustic_model, acoustic_in_scaler, acoustic_out_scaler,
-#                               out_dir, utt_id)
+    for utt_id in utt_list:
+        label_path = join(in_dir, f"{utt_id}.lab")
+        if not exists(label_path):
+            raise RuntimeError(f"Label file does not exist: {label_path}")
+        dump_acoustic_features(config, device, label_path, question_path,
+                               timelag_model, timelag_in_scaler, timelag_out_scaler,
+                               duration_model, duration_in_scaler, duration_out_scaler,
+                               acoustic_model, acoustic_in_scaler, acoustic_out_scaler,
+                               out_dir, utt_id)
     synthesis_nsf(config, utt_list, out_dir, out_dir)
 
 def entry():
