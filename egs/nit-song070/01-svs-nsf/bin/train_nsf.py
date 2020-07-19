@@ -41,6 +41,10 @@ def my_app(config : DictConfig) -> None:
     use_cuda = not config.nsf.args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
+    # fix config.nsf.args.save_model_dir 
+    logger.info(f"NSF setting of config.nsf.args.save_model_dir is converted to absolute path {config.nsf.model.test_output_dirs} by NNSVS.")
+    config.nsf.args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+    
     if not config.nsf.args.inference:
         # prepare data io    
         params = {'batch_size':  config.nsf.args.batch_size,
@@ -54,8 +58,6 @@ def my_app(config : DictConfig) -> None:
         input_dirs = [to_absolute_path(x) for x in config.nsf.model.input_dirs]
         output_dirs = [to_absolute_path(x) for x in config.nsf.model.output_dirs]
 
-        save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
-
         train_set = nii_dset.NIIDataSetLoader("train_no_dev",
                                               train_list, 
                                               input_dirs,
@@ -68,7 +70,7 @@ def my_app(config : DictConfig) -> None:
                                               config.nsf.model.output_dims, 
                                               config.nsf.model.output_reso, 
                                               config.nsf.model.output_norm, 
-                                              save_model_dir, 
+                                              config.nsf.args.save_model_dir,
                                               params = params,
                                               truncate_seq = config.nsf.model.truncate_seq, 
                                               min_seq_len = config.nsf.model.minimum_len,
@@ -89,7 +91,7 @@ def my_app(config : DictConfig) -> None:
                                             config.nsf.model.output_dims,
                                             config.nsf.model.output_reso,
                                             config.nsf.model.output_norm,
-                                            save_model_dir, 
+                                            config.nsf.args.save_model_dir,
                                             params = params,
                                             truncate_seq= config.nsf.model.truncate_seq, 
                                             min_seq_len = config.nsf.model.minimum_len,
