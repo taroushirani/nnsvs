@@ -126,6 +126,7 @@ def my_app(config : DictConfig) -> None:
                 label_path = join(in_dir, f"{utt_id}.lab")
                 if not exists(label_path):
                     raise RuntimeError(f"Label file does not exist: {label_path}")
+
                 wav = synthesis(config, device, label_path, question_path,
                     timelag_model, timelag_in_scaler, timelag_out_scaler,
                     duration_model, duration_in_scaler, duration_out_scaler,
