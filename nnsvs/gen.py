@@ -205,12 +205,11 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_in_scaler,
 
     return pred_acoustic
 
-
 def gen_waveform(labels, acoustic_features, acoustic_out_scaler,
         binary_dict, continuous_dict, stream_sizes, has_dynamic_features,
         subphone_features="coarse_coding", log_f0_conditioning=True, pitch_idx=None,
         num_windows=3, post_filter=True, sample_rate=48000, frame_period=5,
-        relative_f0=True, dump_only=False):
+        relative_f0=True):
 
     windows = get_windows(num_windows)
 
