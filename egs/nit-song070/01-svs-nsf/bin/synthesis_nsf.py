@@ -190,7 +190,7 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
               'num_workers': config.nsf.args.num_workers}
 
     # fix config.nsf.args.save_model_dir 
-    logger.info(f"NSF setting of config.nsf.args.save_model_dir is converted to absolute path {config.nsf.model.test_output_dirs} by NNSVS.")
+    logger.info(f"NSF setting of config.nsf.args.save_model_dir is converted to absolute path by NNSVS.")
     config.nsf.args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
     
     test_set = nii_dset.NIIDataSetLoader("eval",
