@@ -260,7 +260,7 @@ fi
 
 if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
     echo "stage 8: Prepare data for NSF"
-    out_dir=$expdir/nsf2
+    out_dir=$expdir/nsf
     mkdir -p $out_dir
     for s in ${datasets[@]};
     do
@@ -283,8 +283,8 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
 	fi
     fi
 
-    input_dirs=$expdir/nsf2/input_dirs
-    output_dirs=$expdir/nsf2/output_dirs
+    input_dirs=$expdir/nsf/input_dirs
+    output_dirs=$expdir/nsf/output_dirs
     mkdir -p $output_dirs
     mkdir -p $nsf_save_model_dir
     xrun python bin/train_nsf.py \
@@ -298,8 +298,8 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
 	 nsf.model.output_dirs=["$output_dirs"]
 
     # for inference
-    test_input_dirs=$expdir/nsf2/test_input_dirs
-    test_output_dirs=$expdir/nsf2/test_output_dirs
+    test_input_dirs=$expdir/nsf/test_input_dirs
+    test_output_dirs=$expdir/nsf/test_output_dirs
     mkdir -p $test_output_dirs
     xrun python bin/train_nsf.py \
 	 nsf_root_dir=$nsf_root_dir \
