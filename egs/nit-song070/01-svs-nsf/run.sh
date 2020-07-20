@@ -247,7 +247,7 @@ fi
 
 if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
     if [ ! -e $nsf_root_dir ]; then
-	echo "stage 7: Download NSF"
+	echo "stage 7: Downloading NSF"
         mkdir -p downloads
         cd downloads
 	git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
@@ -256,7 +256,7 @@ if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
 fi
 
 if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
-    echo "stage 8: Prepare data for NSF"
+    echo "stage 8: Data preparation for NSF"
     out_dir=$expdir/nsf
     mkdir -p $out_dir
     for s in ${datasets[@]};

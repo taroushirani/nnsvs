@@ -63,7 +63,7 @@ def my_app(config : DictConfig) -> None:
         acoustic_features = np.load(feat_file)
 
         if np.any(has_dynamic_features):
-            # get_static_features requires torch.Tensor, so it is neccessary to wrap acoustic_features
+            # get_static_features requires torch.Tensor, so it is necessary to wrap acoustic_features
             _acoustic_features = torch.from_numpy(acoustic_features.astype(np.float32)).unsqueeze(0)
             acoustic_features = get_static_features(_acoustic_features, num_windows, stream_sizes, has_dynamic_features).squeeze(0).cpu().data.numpy()
             static_stream_sizes = get_static_stream_sizes(
