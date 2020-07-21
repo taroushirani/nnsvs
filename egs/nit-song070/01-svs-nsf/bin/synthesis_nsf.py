@@ -146,11 +146,11 @@ def dump_acoustic_features(config, device, label_path, question_path,
                                                 config.acoustic.relative_f0)
 
     # Save mgc/f0/bap
-    with open(join(feats_out_dir, utt_id + ".f0"), "wb") as f:
+    with open(join(out_dir, utt_id + ".f0"), "wb") as f:
         f0.astype(np.float32).tofile(f)
-    with open(join(feats_out_dir, utt_id + ".mgc"), "wb") as f:
+    with open(join(out_dir, utt_id + ".mgc"), "wb") as f:
         mgc.astype(np.float32).tofile(f)
-    with open(join(feats_out_dir, utt_id + ".bap"), "wb") as f:
+    with open(join(out_dir, utt_id + ".bap"), "wb") as f:
         bap.astype(np.float32).tofile(f)
 
 def synthesis_nsf(config, utt_list, input_dir, output_dir):
