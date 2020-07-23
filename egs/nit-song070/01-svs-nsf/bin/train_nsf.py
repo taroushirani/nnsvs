@@ -198,8 +198,6 @@ def my_app(config : DictConfig) -> None:
 
         test_input_dirs = [to_absolute_path(x) for x in config.nsf.model.test_input_dirs]
 
-        save_model_dir = to_absolute_path(args.save_model_dir)
-
         test_set = nii_dset.NIIDataSetLoader("eval",
                                              test_list, 
                                              test_input_dirs,
@@ -212,7 +210,7 @@ def my_app(config : DictConfig) -> None:
                                              config.nsf.model.output_dims, 
                                              config.nsf.model.output_reso, 
                                              config.nsf.model.output_norm, 
-                                             save_model_dir, 
+                                             args.save_model_dir, 
                                              params = params,
                                              truncate_seq = None,
                                              min_seq_len = None,
@@ -225,9 +223,9 @@ def my_app(config : DictConfig) -> None:
 
         if not args.trained_model:
             print("trained_model is not set, so try to load default trained model")
-            default_trained_model_path = to_absolute_path(join(args.save_model_dir,
-                                                               "{}{}".format(args.save_trained_name,
-                                                                             args.save_model_ext)))
+            default_trained_model_path = join(args.save_model_dir,
+                                              "{}{}".format(args.save_trained_name,
+                                                            args.save_model_ext))
             if not exists(default_trained_model_path):
                 raise Exception("No trained model found")
             checkpoint = torch.load(default_trained_model_path)

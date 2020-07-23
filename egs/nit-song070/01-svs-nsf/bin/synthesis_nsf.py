@@ -246,9 +246,9 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
 
     if not args.trained_model:
         print("trained_model is not set, so try to load default trained model")
-        default_trained_model_path = to_absolute_path(join(args.save_model_dir,
-                                                           "{}{}".format(args.save_trained_name,
-                                                                         args.save_model_ext)))
+        default_trained_model_path = join(args.save_model_dir,
+                                          "{}{}".format(args.save_trained_name,
+                                                        args.save_model_ext))
         if not exists(default_trained_model_path):
             raise Exception("No trained model found")
         checkpoint = torch.load(default_trained_model_path)
