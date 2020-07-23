@@ -12,9 +12,6 @@ import copy
 from nnsvs.logger import getLogger
 logger = None
 
-def initialize_nsf_args(config):
-
-
 @hydra.main(config_path="conf/train_nsf/config.yaml")
 def my_app(config : DictConfig) -> None:
     global logger

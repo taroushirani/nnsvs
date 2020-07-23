@@ -18,13 +18,26 @@ from nnmnkwii.io import hts
 from nnmnkwii.frontend import merlin as fe
 from nnmnkwii.postfilters import merlin_post_filter
 from nnmnkwii.preprocessing.f0 import interp1d
-from nnsvs.multistream import get_windows, multi_stream_mlpg, get_static_stream_sizes, split_streams
+from nnsvs.multistream import multi_stream_mlpg, get_static_stream_sizes, split_streams
 
 from nnsvs.gen import (
     predict_timelag, predict_duration, predict_acoustic, postprocess_duration)
 
 from nnsvs.logger import getLogger
 logger = None
+
+# This function is originated from nnsvs/gen.py
+def get_windows(num_window=1):
+    windows = [(0, 0, np.array([1.0]))]
+    if num_window >= 2:
+        windows.append((1, 1, np.array([-0.5, 0.0, 0.5])))
+    if num_window >= 3:
+        windows.append((1, 1, np.array([1.0, -2.0, 1.0])))
+
+    if num_window >= 4:
+        raise ValueError(f"Not supported num windows: {num_window}")
+
+    return windows
 
 # This function is originated from nsvs/gen.py
 def _midi_to_hz(x, idx, log_f0=False):
