@@ -38,9 +38,6 @@ nsf:
     save_model_ext: ".pt"
     trained_model:
     inference: false
-    # Caution. output directory setting of NSF will be overwritten by NNSVS,
-    # output_dir will be never used.
-    output_dir: "./output"
     optimizer: Adam
     verbose: 1
   model:
