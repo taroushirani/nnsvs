@@ -286,6 +286,7 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
 	 nsf.args.batch_size=1 \
 	 nsf.args.epochs=500 \
 	 nsf.args.no_best_epochs=20 \
+	 nsf.args.lr=0.00003 \
 	 nsf.args.save_model_dir=$nsf_save_model_dir \
 	 nsf.args.trained_model=$nsf_pretrained_model \
 	 nsf.model.input_dirs=["$input_dirs","$input_dirs","$input_dirs"]\
