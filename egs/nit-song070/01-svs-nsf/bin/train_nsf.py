@@ -12,6 +12,9 @@ import copy
 from nnsvs.logger import getLogger
 logger = None
 
+def initialize_nsf_args(config):
+
+
 @hydra.main(config_path="conf/train_nsf/config.yaml")
 def my_app(config : DictConfig) -> None:
     global logger
@@ -54,17 +57,25 @@ def my_app(config : DictConfig) -> None:
     args.shuffle = config.nsf.args.shuffle
     args.num_workers = config.nsf.args.num_workers
     args.multi_gpu_data_parallel = config.nsf.args.multi_gpu_data_parallel
-    args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+    if config.nsf.args.save_model_dir != None:
+        args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+    else:
+        args.save_model_dir = None 
     args.not_save_each_epoch = config.nsf.args.not_save_each_epoch
     args.save_epoch_name = config.nsf.args.save_epoch_name
     args.save_trained_name = config.nsf.args.save_trained_name
     args.save_model_ext = config.nsf.args.save_model_ext
-    args.trained_model = to_absolute_path(config.nsf.args.trained_model)
-    args.inference = config.nsf.args.inference
+    if config.nsf.args.trained_model != None:
+        args.trained_model = to_absolute_path(config.nsf.args.trained_model)
+    else:
+        args.trained_model = None
     args.ignore_training_history_in_trained_model = config.nsf.args.ignore_training_history_in_trained_model
+    args.inference = config.nsf.args.inference
     # args.output_dir is set to config.nsf.model.test_output_dirs for inference stage
-    if len(config.nsf.model.test_output_dirs) != 0:
+    if config.nsf.model.test_output_dirs != None:
         args.output_dir = to_absolute_path(config.nsf.model.test_output_dirs)
+    else:
+        args.output_dir=None
     args.optimizer = config.nsf.args.optimizer
     args.verbose = config.nsf.args.verbose
     

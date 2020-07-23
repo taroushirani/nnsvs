@@ -18,26 +18,13 @@ from nnmnkwii.io import hts
 from nnmnkwii.frontend import merlin as fe
 from nnmnkwii.postfilters import merlin_post_filter
 from nnmnkwii.preprocessing.f0 import interp1d
-from nnsvs.multistream import multi_stream_mlpg, get_static_stream_sizes, split_streams
+from nnsvs.multistream import get_windows, multi_stream_mlpg, get_static_stream_sizes, split_streams
 
 from nnsvs.gen import (
     predict_timelag, predict_duration, predict_acoustic, postprocess_duration)
 
 from nnsvs.logger import getLogger
 logger = None
-
-# This function is originated from nnsvs/gen.py
-def get_windows(num_window=1):
-    windows = [(0, 0, np.array([1.0]))]
-    if num_window >= 2:
-        windows.append((1, 1, np.array([-0.5, 0.0, 0.5])))
-    if num_window >= 3:
-        windows.append((1, 1, np.array([1.0, -2.0, 1.0])))
-
-    if num_window >= 4:
-        raise ValueError(f"Not supported num windows: {num_window}")
-
-    return windows
 
 # This function is originated from nsvs/gen.py
 def _midi_to_hz(x, idx, log_f0=False):
@@ -192,12 +179,18 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
     args.shuffle = config.nsf.args.shuffle
     args.num_workers = config.nsf.args.num_workers
     args.multi_gpu_data_parallel = config.nsf.args.multi_gpu_data_parallel
-    args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+    if config.nsf.args.save_model_dir != None:
+        args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+    else:
+        args.save_model_dir = None 
     args.not_save_each_epoch = config.nsf.args.not_save_each_epoch
     args.save_epoch_name = config.nsf.args.save_epoch_name
     args.save_trained_name = config.nsf.args.save_trained_name
     args.save_model_ext = config.nsf.args.save_model_ext
-    args.trained_model = to_absolute_path(config.nsf.args.trained_model)
+    if config.nsf.args.trained_model != None:
+        args.trained_model = to_absolute_path(config.nsf.args.trained_model)
+    else:
+        args.trained_model = None
     args.ignore_training_history_in_trained_model = config.nsf.args.ignore_training_history_in_trained_model
     args.inference = config.nsf.args.inference
     args.output_dir = to_absolute_path(output_dir)
