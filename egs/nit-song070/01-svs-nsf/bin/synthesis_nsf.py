@@ -175,38 +175,34 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
 
     import model as nsf_model
 
-    # Overwrite output_dir setting
-    logger.info(f"NSF setting of config.nsf.args.output_dir is overwritten with {output_dir} by NNSVS.")
-    
-    config.nsf.args.output_dir = to_absolute_path(output_dir)
-    
     # Initialization
     # All NSF related settings are copied to argparse.Namespace object, because NSF core scripts are written
     # to work with argparse, not hydra.
     # Setting of file paths are converted to absolute one(save_model_dir, trained_model, output_dir)
     args = argparse.Namespace()
     args.batch_size = config.nsf.args.batch_size
-    args.epochs = config.nsf.args.epoch
+    args.epochs = config.nsf.args.epochs
     args.no_best_epochs = config.nsf.args.no_best_epochs
     args.lr = config.nsf.args.lr
     args.no_cuda = config.nsf.args.no_cuda
     args.seed = config.nsf.args.seed
     args.eval_mode_for_validation = config.nsf.args.eval_mode_for_validation
     args.model_forward_with_target = config.nsf.args.model_forward_with_target
+    args.model_forward_with_file_name = config.nsf.args.model_forward_with_file_name
     args.shuffle = config.nsf.args.shuffle
     args.num_workers = config.nsf.args.num_workers
+    args.multi_gpu_data_parallel = config.nsf.args.multi_gpu_data_parallel
     args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
     args.not_save_each_epoch = config.nsf.args.not_save_each_epoch
     args.save_epoch_name = config.nsf.args.save_epoch_name
     args.save_trained_name = config.nsf.args.save_trained_name
     args.save_model_ext = config.nsf.args.save_model_ext
     args.trained_model = to_absolute_path(config.nsf.args.trained_model)
+    args.ignore_training_history_in_trained_model = config.nsf.args.ignore_training_history_in_trained_model
     args.inference = config.nsf.args.inference
     args.output_dir = to_absolute_path(output_dir)
     args.optimizer = config.nsf.args.optimizer
     args.verbose = config.nsf.args.verbose
-    
-
     
     torch.manual_seed(args.seed)
     use_cuda = not args.no_cuda and torch.cuda.is_available()

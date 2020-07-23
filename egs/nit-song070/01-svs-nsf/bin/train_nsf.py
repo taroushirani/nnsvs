@@ -43,15 +43,17 @@ def my_app(config : DictConfig) -> None:
     # Settings of file paths are converted to absolute ones(save_model_dir, trained_model, output_dir)
     args = argparse.Namespace()
     args.batch_size = config.nsf.args.batch_size
-    args.epochs = config.nsf.args.epoch
+    args.epochs = config.nsf.args.epochs
     args.no_best_epochs = config.nsf.args.no_best_epochs
     args.lr = config.nsf.args.lr
     args.no_cuda = config.nsf.args.no_cuda
     args.seed = config.nsf.args.seed
     args.eval_mode_for_validation = config.nsf.args.eval_mode_for_validation
     args.model_forward_with_target = config.nsf.args.model_forward_with_target
+    args.model_forward_with_file_name = config.nsf.args.model_forward_with_file_name
     args.shuffle = config.nsf.args.shuffle
     args.num_workers = config.nsf.args.num_workers
+    args.multi_gpu_data_parallel = config.nsf.args.multi_gpu_data_parallel
     args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
     args.not_save_each_epoch = config.nsf.args.not_save_each_epoch
     args.save_epoch_name = config.nsf.args.save_epoch_name
@@ -59,8 +61,10 @@ def my_app(config : DictConfig) -> None:
     args.save_model_ext = config.nsf.args.save_model_ext
     args.trained_model = to_absolute_path(config.nsf.args.trained_model)
     args.inference = config.nsf.args.inference
+    args.ignore_training_history_in_trained_model = config.nsf.args.ignore_training_history_in_trained_model
     # args.output_dir is set to config.nsf.model.test_output_dirs for inference stage
-    args.output_dir = to_absolute_path(config.nsf.model.test_output_dirs)
+    if len(config.nsf.model.test_output_dirs) != 0:
+        args.output_dir = to_absolute_path(config.nsf.model.test_output_dirs)
     args.optimizer = config.nsf.args.optimizer
     args.verbose = config.nsf.args.verbose
     
