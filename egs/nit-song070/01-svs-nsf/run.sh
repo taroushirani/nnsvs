@@ -65,7 +65,7 @@ acoustic_model_out_dim=187
 
 nsf_root_dir=downloads/project-NN-Pytorch-scripts/
 nsf_save_model_dir=$expdir/nsf/train_outputs
-nsf_pretrained_model=$expdir/nsf/train_outputs/trained_network.pt
+nsf_pretrained_model=
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
     if [ ! -e downloads/HTS-demo_NIT-SONG070-F001 ]; then
@@ -98,9 +98,7 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     for s in ${datasets[@]};
     do
       nnsvs-prepare-features utt_list=data/list/$s.list out_dir=$dump_org_dir/$s/  \
-			     question_path=$question_path \
-			     acoustic.use_harvest=false
-      
+			     question_path=$question_path 
     done
 
     # Compute normalization stats for each input/output
