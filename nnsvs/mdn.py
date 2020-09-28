@@ -61,7 +61,7 @@ def mdn_loss(pi, sigma, mu, target):
         mu (B , max(T), G, D_out): The means of the Gaussians. 
         target (B,max(T), D_out): The target variables.
     Returns:
-        loss (B, max(T)): Negative Log Likelihood of Mixture Density Networks.
+        loss (B): Negative Log Likelihood of Mixture Density Networks.
     """
     # Expand the dim of target as (B,max(T),D_out) -> (B,max(T),1,D_out) -> (B,max(T),G,D_out)
     target = target.unsqueeze(2).expand_as(sigma)
