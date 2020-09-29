@@ -102,14 +102,12 @@ class RMDN(nn.Module):
 class MDN(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0, num_gaussians=30):
         super(MDN, self).__init__()
-        self.first_linear = nn.Linear(in_dim, hidden_dim)
-        self.hidden_layers = nn.ModuleList(
-            [nn.Linear(hidden_dim, hidden_dim) for _ in range(num_layers)])
-        self.tanh = nn.Tanh()
-        self.mdn = MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)
+        model = [nn.Linear(in_dim, hidden_dim), nn.ReLU()]
+        if num_layers > 1:
+            for _ in range(num_layers - 1):
+                model += [nn.Linear(hidden_dim, hidden_dim), nn.ReLU()]
+        model += [MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)]
+        self.model = nn.Sequential(*model)
         self.prediction_type="probabilistic"
     def forward(self, x, lengths=None):
-        out = self.tanh(self.first_linear(x))
-        for hl in self.hidden_layers:
-            out = self.tanh(hl(out))
-        return self.mdn(out)
+        return self.model(x)
