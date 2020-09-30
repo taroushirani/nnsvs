@@ -84,7 +84,7 @@ class LSTMRNN(nn.Module):
         return out
 
 class RMDN(nn.Module):
-    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, bidirectional=True, dropout=0.0, num_gaussians=30):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, bidirectional=True, dropout=0.0, num_gaussians=8):
         super(RMDN, self).__init__()
         self.num_direction=2 if bidirectional else 1
         self.lstm = nn.LSTM(in_dim, hidden_dim, num_layers, 
@@ -100,7 +100,7 @@ class RMDN(nn.Module):
         return out
 
 class MDN(nn.Module):
-    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0, num_gaussians=30):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0, num_gaussians=8):
         super(MDN, self).__init__()
         model = [nn.Linear(in_dim, hidden_dim), nn.ReLU()]
         if num_layers > 1:
@@ -111,3 +111,16 @@ class MDN(nn.Module):
         self.prediction_type="probabilistic"
     def forward(self, x, lengths=None):
         return self.model(x)
+
+class Conv1dResnetMDN(nn.Module):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=4, dropout=0.0, num_gaussians=8):
+        super().__init__()
+        self.conv1dresnet = Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout)
+        self.relu=nn.ReLU()
+        self.mdn = MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)
+        self.prediction_type="probabilistic"
+        
+    def forward(self, x, lengths=None):
+        out = self.conv1dresnet(x.transpose(1,2)).transpose(1,2)
+        return self.mdn(self.relu(out))
+    
