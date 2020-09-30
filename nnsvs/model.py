@@ -115,12 +115,12 @@ class MDN(nn.Module):
 class Conv1dResnetMDN(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=4, dropout=0.0, num_gaussians=8):
         super().__init__()
-        self.conv1dresnet = Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout)
-        self.relu=nn.ReLU()
-        self.mdn = MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)
+        model = [Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout),
+                 nn.ReLU(),
+                 MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)]
+        self.model = nn.Sequential(*model)
         self.prediction_type="probabilistic"
         
     def forward(self, x, lengths=None):
-        out = self.conv1dresnet(x.transpose(1,2)).transpose(1,2)
-        return self.mdn(self.relu(out))
+        return self.model(x)
     
