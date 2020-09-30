@@ -26,7 +26,7 @@ class MDNLayer(nn.Module):
     Output:
         pi, sigma, mu (B, max(T), G), (B, max(T), G, D_out), (B, max(T), G, D_out): 
             G is num_gaussians and D_out is out_dim.
-            pi is a multinomial distribution of the Gaussians. 
+            pi is a multinomial distribution of the Gaussians(not Softmaxed). 
             mu and sigma are the mean and the standard deviation of each Gaussian.
     """
     def __init__(self, in_dim, out_dim, num_gaussians=30):
@@ -35,9 +35,7 @@ class MDNLayer(nn.Module):
         self.out_dim = out_dim
         self.num_gaussians = num_gaussians
 
-        self.pi = nn.Sequential(nn.Linear(in_dim, num_gaussians),
-                                nn.Softmax(dim=2)
-        )                
+        self.pi = nn.Linear(in_dim, num_gaussians)
         self.sigma = nn.Linear(in_dim, out_dim * num_gaussians)
         self.mu = nn.Linear(in_dim, out_dim * num_gaussians)
 
@@ -54,7 +52,7 @@ def mdn_loss(pi, sigma, mu, target):
     The loss is the negative log likelihood of the data given the MoG
     parameters.
     Arguments:
-        pi (B, max(T), G): The multinomial distribution of the Gaussians. B is the batch size,
+        pi (B, max(T), G): The multinomial distribution of the Gaussians(not Softmaxed). B is the batch size,
             max(T) is the max frame length in this batch, and G is num_gaussians of class MDNLayer.
         sigma (B, max(T) , G ,D_out): The standard deviation of the Gaussians. D_out is out_dim of class 
             MDNLayer.
@@ -75,7 +73,7 @@ def mdn_loss(pi, sigma, mu, target):
     # Use torch.log_sum_exp instead of the combination of torch.sum and torch.log
     # Please see https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563
     # log p(y|x,w) + log pi
-    loss = dist.log_prob(target) + torch.log(pi)
+    loss = dist.log_prob(target) + F.log_softmax(pi, dim=2)
     
     # Calculate negative log likelihood and average it
     # (B, max(T), G, D_out) -> (B, max(T), D_out) -> (B, D_out)
@@ -101,8 +99,9 @@ def mdn_sample_mode(pi, mu):
     as the most probable predictions.
 
     Arguments:
-        pi (B, max(T), G): The multinomial distribution of the Gaussians. B is the batch size,
-            max(T) is the max frame length in this batch, G is num_gaussians of class MDNLayer.
+        pi (B, max(T), G): The multinomial distribution of the Gaussians(not softmaxed). 
+            B is the batch size, max(T) is the max frame length in this batch, 
+            G is num_gaussians of class MDNLayer.
         mu (B, max(T), G, D_out): The means of the Gaussians. D_out is out_dim of class 
             MDNLayer.
     Returns:
@@ -133,8 +132,9 @@ def mdn_sample(pi, sigma, mu):
     as the most probable predictions.
 
     Arguments:
-        pi (B, max(T), G): The multinomial distribution of the Gaussians. B is the batch size,
-            max(T) is the max frame length in this batch, G is num_gaussians of class MDNLayer.
+        pi (B, max(T), G): The multinomial distribution of the Gaussians(not softmaxed). 
+            B is the batch size, max(T) is the max frame length in this batch, 
+            G is num_gaussians of class MDNLayer.
         sigma (B, max(T) , G ,D_out): The standard deviation of the Gaussians. D_out is out_dim of class 
             MDNLayer.
         mu (B, max(T), G, D_out): The means of the Gaussians. D_out is out_dim of class 
