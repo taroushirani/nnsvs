@@ -88,7 +88,7 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
         # (B, max(T)) -> (B)
         return -torch.mean(loss, dim=1)
     else:
-        # not averaged for masking
+        # not averaged (for applying mask later)
         # (B, max(T))
         return -loss
     return 
