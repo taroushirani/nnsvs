@@ -47,7 +47,7 @@ class MDNLayer(nn.Module):
         mu = mu.view(len(minibatch), -1, self.num_gaussians, self.out_dim)
         return pi, sigma, mu
 
-def mdn_loss(pi, sigma, mu, target):
+def mdn_loss(pi, sigma, mu, target, reduce=True):
     """Calculates the error, given the MoG parameters and the target.
     The loss is the negative log likelihood of the data given the MoG
     parameters.
@@ -58,6 +58,7 @@ def mdn_loss(pi, sigma, mu, target):
             MDNLayer.
         mu (B , max(T), G, D_out): The means of the Gaussians. 
         target (B,max(T), D_out): The target variables.
+        reduce: If True, the losses are averaged or summed for each minibatch.
     Returns:
         loss (B): Negative Log Likelihood of Mixture Density Networks.
     """
@@ -75,15 +76,22 @@ def mdn_loss(pi, sigma, mu, target):
     # log p(y|x,w) + log pi
     loss = dist.log_prob(target) + F.log_softmax(pi, dim=2)
     
-    # Calculate negative log likelihood and average it
-    # (B, max(T), G, D_out) -> (B, max(T), D_out) -> (B, D_out)
+    # Calculate negative log likelihood.
+    # (B, max(T), G, D_out) -> (B, max(T), D_out)
     loss = torch.logsumexp(loss, dim=2)
-    loss = -torch.mean(loss, dim=1)
-    
+
     # Sum along the dimension of target variables to reduce the dim of loss
-    # (B, D_out) -> (B)
-    loss = torch.sum(loss, dim=1)
-    return loss
+    # (B, max(T), D_out) -> (B, max(T))
+    loss = torch.sum(loss, dim=2)
+
+    if reduce:
+        # (B, max(T)) -> (B)
+        return -torch.mean(loss, dim=1)
+    else:
+        # not averaged for masking
+        # (B, max(T))
+        return -loss
+    return 
 
 # from r9y9/wavenet_vocoder/wavenet_vocoder/mixture.py
 def to_one_hot(tensor, n, fill_with=1.):
