@@ -26,8 +26,10 @@ class MDNLayer(nn.Module):
     Output:
         pi, sigma, mu (B, max(T), G), (B, max(T), G, D_out), (B, max(T), G, D_out): 
             G is num_gaussians and D_out is out_dim.
-            pi is a multinomial distribution of the Gaussians(not Softmaxed). 
+            pi is a multinomial distribution of the Gaussians(not Softmax-ed). 
             mu and sigma are the mean and the standard deviation of each Gaussian.
+    Note: pi is not Softmax-ed due to the numerical stability. If you want to construct whole
+        probabilistic density function, you should apply torch.nn.functional.softmax to them first.
     """
     def __init__(self, in_dim, out_dim, num_gaussians=30):
         super(MDNLayer, self).__init__()
@@ -52,7 +54,7 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
     The loss is the negative log likelihood of the data given the MoG
     parameters.
     Arguments:
-        pi (B, max(T), G): The multinomial distribution of the Gaussians(not Softmaxed). B is the batch size,
+        pi (B, max(T), G): The multinomial distribution of the Gaussians(not Softmax-ed). B is the batch size,
             max(T) is the max frame length in this batch, and G is num_gaussians of class MDNLayer.
         sigma (B, max(T) , G ,D_out): The standard deviation of the Gaussians. D_out is out_dim of class 
             MDNLayer.
@@ -107,7 +109,7 @@ def mdn_sample_mode(pi, mu):
     as the most probable predictions.
 
     Arguments:
-        pi (B, max(T), G): The multinomial distribution of the Gaussians(not softmaxed). 
+        pi (B, max(T), G): The multinomial distribution of the Gaussians(not Softmax-ed). 
             B is the batch size, max(T) is the max frame length in this batch, 
             G is num_gaussians of class MDNLayer.
         mu (B, max(T), G, D_out): The means of the Gaussians. D_out is out_dim of class 
@@ -140,7 +142,7 @@ def mdn_sample(pi, sigma, mu):
     as the most probable predictions.
 
     Arguments:
-        pi (B, max(T), G): The multinomial distribution of the Gaussians(not softmaxed). 
+        pi (B, max(T), G): The multinomial distribution of the Gaussians(not Softmax-ed). 
             B is the batch size, max(T) is the max frame length in this batch, 
             G is num_gaussians of class MDNLayer.
         sigma (B, max(T) , G ,D_out): The standard deviation of the Gaussians. D_out is out_dim of class 
