@@ -1,0 +1,54 @@
+diff -urN 03-mdn-world/utils/data_prep.py 01-svs-nsf/utils/data_prep.py
+--- 03-mdn-world/utils/data_prep.py	2020-10-01 18:33:05.742615100 +0900
++++ 01-svs-nsf/utils/data_prep.py	2020-10-01 18:32:33.081353000 +0900
+@@ -10,7 +10,6 @@
+ import soundfile as sf
+ import sys
+ import numpy as np
+-
+ from nnsvs.io.hts import get_note_indices
+ 
+ 
+@@ -40,6 +39,7 @@
+     parser.add_argument("hts_demo_root", type=str, help="HTS demo root")
+     parser.add_argument("out_dir", type=str, help="Output directory")
+     parser.add_argument("--gain-normalize", action='store_true')
++    parser.add_argument("--sample-rate", type=int, default=48000, help="Audio sampling rate (default 48000)")
+     return parser
+ 
+ args = get_parser().parse_args(sys.argv[1:])
+@@ -48,6 +48,7 @@
+ out_dir = args.out_dir
+ hts_label_root = join(hts_demo_root, "data/labels")
+ gain_normalize = args.gain_normalize
++sample_rate = args.sample_rate
+ 
+ # Time-lag constraints to filter outliers
+ timelag_allowed_range = (-20, 19)
+@@ -185,12 +186,17 @@
+     # We can load and manupulate audio (e.g., normalizing gain), but for now just copy it as is
+     if exists(wav_path):
+         # sr, wave = wavfile.read(wav_path)
+-        wav, sr = librosa.load(wav_path, sr=48000)
++        wav, sr = librosa.load(wav_path, sr=sample_rate)
+     else:
+         assert raw_path
+         wav = np.fromfile(raw_path, dtype=np.int16)
+         wav = wav.astype(np.float32) / 2**15
+-        sr = 48000
++        raw_sr = 48000
++        if sample_rate != raw_sr:
++            wav = librosa.core.resample(wav, raw_sr, sample_rate)
++            sr = sample_rate
++        else:
++            sr = raw_sr
+ 
+     if gain_normalize:
+         wav = wav / wav.max() * 0.99
+@@ -212,4 +218,4 @@
+     with open(lab_score_dst_path, "w") as of:
+         of.write(str(lab_score))
+ 
+-sys.exit(0)
+\ ファイル末尾に改行がありません
++sys.exit(0)
