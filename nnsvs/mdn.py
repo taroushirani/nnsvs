@@ -75,9 +75,15 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
     dist = torch.distributions.Normal(loc=mu, scale=torch.exp(sigma))
 
     # Use torch.log_sum_exp instead of the combination of torch.sum and torch.log
-    # Please see https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563
-    # log p(y|x,w) + log pi
-    #loss = dist.log_prob(target) + F.log_softmax(pi, dim=2)
+    # (Reference: https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563)
+
+    # Here we assume that the covariance matrix of multivariate Gaussian distribution is diagonal
+    # to handle the mean and the variance in each dimension separately.
+    # (Reference: https://markusthill.github.io/gaussian-distribution-with-a-diagonal-covariance-matrix/)
+
+    # log pi(x)N(y|mu(x),sigma(x)) = log pi(x) + log N(y|mu(x),sigma(x))
+    # log N(y_1,y_2,...,y_{D_out}|mu(x),sigma(x)) = log N(y_1|mu(x),sigma(x))...N(y_{D_out}|mu(x),sigma(x))
+    #                                             = \sum_{i=1}^{D_out} log N(y_i|mu(x),sigma(x))
     # (B, max(T), G, D_out) -> (B, max(T), G)
     loss = torch.sum(dist.log_prob(target), dim=3) + F.log_softmax(pi, dim=2)
     
