@@ -43,7 +43,7 @@ class MDNLayer(nn.Module):
 
     def forward(self, minibatch):
         pi = self.pi(minibatch) 
-        sigma = torch.exp(self.sigma(minibatch))
+#        sigma = torch.exp(self.sigma(minibatch))
         sigma = sigma.view(len(minibatch), -1, self.num_gaussians, self.out_dim)        
         mu = self.mu(minibatch)
         mu = mu.view(len(minibatch), -1, self.num_gaussians, self.out_dim)
@@ -71,7 +71,7 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
     pi = pi.unsqueeze(3).expand_as(sigma)
 
     # Create gaussians with mean=mu and variance=sigma^2
-    dist = torch.distributions.Normal(loc=mu, scale=sigma)
+    dist = torch.distributions.Normal(loc=mu, scale=torch.exp(sigma))
 
     # Use torch.log_sum_exp instead of the combination of torch.sum and torch.log
     # Please see https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563
@@ -170,7 +170,7 @@ def mdn_sample(pi, sigma, mu):
     max_sigma = torch.sum(sigma * one_hot, dim=2)
 
     # Create gaussians with mean=max_mu and variance=max_sigma^2
-    dist= torch.distributions.Normal(loc=max_mu, scale=max_sigma)
+    dist= torch.distributions.Normal(loc=max_mu, scale=torch.exp(max_sigma))
 
     # Sample from normal distribution
     sample = dist.sample()
