@@ -24,7 +24,7 @@ class MDNLayer(nn.Module):
         minibatch (B, T, D_in): B is the batch size and T is data lengths of this batch, 
             and D_in is in_dim.
     Output:
-        pi, sigma, mu (B, T, G), (B, max(T), G, D_out), (B, max(T), G, D_out): 
+        pi, sigma, mu (B, T, G), (B, T, G, D_out), (B, T, G, D_out): 
             G is num_gaussians and D_out is out_dim.
             pi is a multinomial distribution of the Gaussians(not Softmax-ed). 
             mu and sigma are the mean and the standard deviation of each Gaussian.
@@ -65,7 +65,7 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
     Returns:
         loss (B): Negative Log Likelihood of Mixture Density Networks.
     """
-    # Expand the dim of target as (B, T,D_out) -> (B, T, 1, D_out) -> (B, T,G,D_out)
+    # Expand the dim of target as (B, T, D_out) -> (B, T, 1, D_out) -> (B, T,G, D_out)
     target = target.unsqueeze(2).expand_as(sigma)
 
     # Create gaussians with mean=mu and variance=sigma^2
