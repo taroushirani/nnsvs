@@ -200,7 +200,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
 	+model.netG.num_gaussians=$num_gaussians \
 	+model.netG.bidirectional=True \
 	model.stream_sizes=$acoustic_model_stream_sizes \	
-	model.netG.params.out_dim=$acoustic_model_out_dim \
+	model.netG.out_dim=$acoustic_model_out_dim \
         data.batch_size=$batch_size \
 	train.nepochs=$nepochs \
         resume.checkpoint=$resume_checkpoint 
