@@ -44,6 +44,7 @@ class MDNLayer(nn.Module):
     def forward(self, minibatch):
         pi = self.pi(minibatch) 
 #        sigma = torch.exp(self.sigma(minibatch))
+        sigma = self.sigma(minibatch)
         sigma = sigma.view(len(minibatch), -1, self.num_gaussians, self.out_dim)        
         mu = self.mu(minibatch)
         mu = mu.view(len(minibatch), -1, self.num_gaussians, self.out_dim)
@@ -68,15 +69,17 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
     target = target.unsqueeze(2).expand_as(sigma)
 
     # Expand the dim of pi as (B,max(T),G) -> (B,max(T),G,1)-> (B,max(T),G,D_out)
-    pi = pi.unsqueeze(3).expand_as(sigma)
-
+    #pi = pi.unsqueeze(3).expand_as(sigma)
+    
     # Create gaussians with mean=mu and variance=sigma^2
     dist = torch.distributions.Normal(loc=mu, scale=torch.exp(sigma))
 
     # Use torch.log_sum_exp instead of the combination of torch.sum and torch.log
     # Please see https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563
     # log p(y|x,w) + log pi
-    loss = dist.log_prob(target) + F.log_softmax(pi, dim=2)
+    #loss = dist.log_prob(target) + F.log_softmax(pi, dim=2)
+    # (B, max(T), G, D_out) -> (B, max(T), G)
+    loss = torch.sum(dist.log_prob(target), dim=3) + F.log_softmax(pi, dim=2)
     
     # Calculate negative log likelihood.
     # (B, max(T), G, D_out) -> (B, max(T), D_out)
@@ -84,7 +87,7 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
 
     # Sum along the dimension of target variables to reduce the dim of loss
     # (B, max(T), D_out) -> (B, max(T))
-    loss = torch.sum(loss, dim=2)
+    #loss = torch.sum(loss, dim=2)
 
     if reduce:
         # (B, max(T)) -> (B)
