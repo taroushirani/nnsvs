@@ -15,9 +15,12 @@ hts_demo_root=downloads/HTS-demo_NIT-SONG070-F001
 
 # Pretrained model dir
 # leave empty to disable
-pretrained_expdir=../../kiritan_singing/00-svs-world/exp/kiritan
+#pretrained_expdir=../../kiritan_singing/00-svs-world/exp/kiritan
+pretrained_expdir=
 
 batch_size=4
+nepochs=50
+num_gaussians=2
 
 stage=0
 stop_stage=0
@@ -63,7 +66,7 @@ if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
         cd downloads
         curl -LO http://hts.sp.nitech.ac.jp/archives/2.3/HTS-demo_NIT-SONG070-F001.tar.bz2
         tar jxvf HTS-demo_NIT-SONG070-F001.tar.bz2
-        cd $script_dir
+	cd $script_dir
     fi
 fi
 
@@ -135,8 +138,15 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
         data.dev.in_dir=$dump_norm_dir/$dev_set/in_timelag/ \
         data.dev.out_dir=$dump_norm_dir/$dev_set/out_timelag/ \
         model=timelag train.out_dir=$expdir/timelag \
+	model.netG._target_=nnsvs.model.RMDN \
+	model.netG.hidden_dim=256 \
+	model.netG.num_layers=2 \
+	+model.netG.num_gaussians=$num_gaussians \
+	+model.netG.bidirectional=True \
         data.batch_size=$batch_size \
-        resume.checkpoint=$resume_checkpoint
+	train.nepochs=$nepochs \
+        resume.checkpoint=$resume_checkpoint 
+	
 fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
@@ -151,7 +161,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
         data.dev.in_dir=$dump_norm_dir/$dev_set/in_duration/ \
         data.dev.out_dir=$dump_norm_dir/$dev_set/out_duration/ \
         model=duration train.out_dir=$expdir/duration \
+	model.netG._target_=nnsvs.model.RMDN \
+	model.netG.hidden_dim=256 \
+	model.netG.num_layers=2 \
+	+model.netG.num_gaussians=$num_gaussians \
         data.batch_size=$batch_size \
+	train.nepochs=$nepochs \
         resume.checkpoint=$resume_checkpoint
 fi
 
@@ -168,8 +183,14 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
         data.dev.in_dir=$dump_norm_dir/$dev_set/in_acoustic/ \
         data.dev.out_dir=$dump_norm_dir/$dev_set/out_acoustic/ \
         model=acoustic train.out_dir=$expdir/acoustic \
+	model.netG._target_=nnsvs.model.RMDN \
+	model.netG.hidden_dim=256 \
+	model.netG.num_layers=2 \
+	+model.netG.num_gaussians=$num_gaussians \
+	+model.netG.bidirectional=True \
         data.batch_size=$batch_size \
-        resume.checkpoint=$resume_checkpoint
+	train.nepochs=$nepochs \
+        resume.checkpoint=$resume_checkpoint 
 fi
 
 

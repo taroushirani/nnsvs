@@ -7,7 +7,7 @@ version = SourceFileLoader('nnsvs.version', 'nnsvs/version.py').load_module().ve
 
 packages = find_packages()
 if exists("README.md"):
-    with open("README.md", "r") as fh:
+    with open("README.md", "r", encoding="UTF-8") as fh:
         LONG_DESC = LONG_DESC = fh.read()
 else:
     LONG_DESC = ""
@@ -23,8 +23,8 @@ setup(name='nnsvs',
         "numpy",
         "cython",
         "torch >= 1.1.0",
-        "hydra-core",
-        "hydra_colorlog",
+        "hydra-core >= 1.0.0",
+        "hydra_colorlog >= 1.0.0",
         "librosa >= 0.7.0",
         "pysptk",
         "pyworld",
