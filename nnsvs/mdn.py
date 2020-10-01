@@ -170,7 +170,7 @@ def mdn_sample(pi, sigma, mu):
     max_sigma = torch.sum(sigma * one_hot, dim=2)
 
     # Create gaussians with mean=max_mu and variance=max_sigma^2
-    dist= torch.distributions.Normal(loc=max_mu, scale=sigma)
+    dist= torch.distributions.Normal(loc=max_mu, scale=max_sigma)
 
     # Sample from normal distribution
     sample = dist.sample()
