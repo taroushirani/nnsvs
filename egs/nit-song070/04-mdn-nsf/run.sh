@@ -34,7 +34,7 @@ acoustic_model_out_dim=187
 
 nsf_root_dir=downloads/project-NN-Pytorch-scripts/
 nsf_save_model_dir=$expdir/nsf/train_outputs
-nsf_pretrained_model=
+nsf_pretrained_model=nsf/trained_network_cmu_arctic_20200728.pt
 
 # exp tag
 tag="" # tag for managing experiments.
@@ -257,8 +257,7 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             out_dir=$expdir/synthesis/$s/latest/$input \
             ground_truth_duration=$ground_truth_duration \
 	    nsf_root_dir=downloads/project-NN-Pytorch-scripts/ \
-	    nsf.args.save_model_dir=$nsf_save_model_dir \
-            nsf.args.trained_model=$nsf_pretrained_model
+	    nsf.args.save_model_dir=$nsf_save_model_dir 
         done
     done
 fi
@@ -300,10 +299,8 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
     mkdir -p $nsf_save_model_dir
     xrun python bin/train_nsf.py \
 	 nsf_root_dir=$nsf_root_dir \
-	 nsf_type=hn-sinc-nsf \
-	 nsf.args.batch_size=1 \
 	 nsf.args.epochs=100 \
-	 nsf.args.no_best_epochs=5 \
+	 nsf.args.no_best_epochs=10 \
 	 nsf.args.lr=0.00003 \
 	 nsf.args.save_model_dir=$nsf_save_model_dir \
 	 nsf.args.trained_model=$nsf_pretrained_model \
@@ -324,10 +321,7 @@ if [ ${stage} -le 10 ] && [ ${stop_stage} -ge 10 ]; then
     mkdir -p $test_output_dirs
     xrun python bin/train_nsf.py \
 	 nsf_root_dir=$nsf_root_dir \
-	 nsf_type=hn-sinc-nsf \
-	 nsf.args.batch_size=1 \
 	 nsf.args.save_model_dir=$nsf_save_model_dir \
-	 nsf.args.trained_model=$nsf_pretrained_model \
 	 nsf.args.inference=true \
 	 nsf.model.test_input_dirs=["$test_input_dirs","$test_input_dirs","$test_input_dirs"]\
 	 nsf.model.test_output_dirs=$test_output_dirs
