@@ -43,8 +43,7 @@ class MDNLayer(nn.Module):
 
     def forward(self, minibatch):
         pi = self.pi(minibatch) 
-#        sigma = torch.exp(self.sigma(minibatch))
-        sigma = self.sigma(minibatch)
+        sigma = torch.exp(self.sigma(minibatch))
         sigma = sigma.view(len(minibatch), -1, self.num_gaussians, self.out_dim)        
         mu = self.mu(minibatch)
         mu = mu.view(len(minibatch), -1, self.num_gaussians, self.out_dim)
@@ -61,15 +60,15 @@ def mdn_loss(pi, sigma, mu, target, reduce=True):
             MDNLayer.
         mu (B , T, G, D_out): The means of the Gaussians. 
         target (B, T, D_out): The target variables.
-        reduce: If True, the losses are averaged or summed for each minibatch.
+        reduce: If True, the losses are averaged for each batch.
     Returns:
-        loss (B): Negative Log Likelihood of Mixture Density Networks.
+        loss (B) or (B, T): Negative Log Likelihood of Mixture Density Networks.
     """
     # Expand the dim of target as (B, T, D_out) -> (B, T, 1, D_out) -> (B, T,G, D_out)
     target = target.unsqueeze(2).expand_as(sigma)
 
     # Create gaussians with mean=mu and variance=sigma^2
-    dist = torch.distributions.Normal(loc=mu, scale=torch.exp(sigma))
+    dist = torch.distributions.Normal(loc=mu, scale=sigma)
 
     # Use torch.log_sum_exp instead of the combination of torch.sum and torch.log
     # (Reference: https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563)
@@ -171,7 +170,7 @@ def mdn_sample(pi, sigma, mu):
     max_sigma = torch.sum(sigma * one_hot, dim=2)
 
     # Create gaussians with mean=max_mu and variance=max_sigma^2
-    dist= torch.distributions.Normal(loc=max_mu, scale=torch.exp(max_sigma))
+    dist= torch.distributions.Normal(loc=max_mu, scale=sigma)
 
     # Sample from normal distribution
     sample = dist.sample()
