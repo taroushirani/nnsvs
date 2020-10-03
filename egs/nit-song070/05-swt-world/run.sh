@@ -191,13 +191,12 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
 			$expdir/$typ/stream_1_latest.pth,
 			$expdir/$typ/stream_2_latest.pth,
 			$expdir/$typ/stream_3_latest.pth]
-            name=$(basename $checkpoint)
+            name=latest
             xrun nnsvs-generate model.checkpoint=$checkpoint \
-                model.model_yaml=$expdir/$typ/model.yaml \
-                out_scaler_path=$dump_norm_dir/out_${typ}_scaler.joblib \
-                in_dir=$dump_norm_dir/$s/in_${typ}/ \
-                out_dir=$expdir/$typ/predicted/$s/${name%.*}/
-	    
+                 model.model_yaml=$expdir/$typ/model.yaml \
+                 out_scaler_path=$dump_norm_dir/out_${typ}_scaler.joblib \
+                 in_dir=$dump_norm_dir/$s/in_${typ}/ \
+                 out_dir=$expdir/$typ/predicted/$s/${name%.*}/
         done
     done
 fi

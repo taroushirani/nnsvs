@@ -22,29 +22,7 @@ logger = None
 
 use_cuda = torch.cuda.is_available()
 
-
-@hydra.main(config_path="conf/generate/config.yaml")
-def my_app(config : DictConfig) -> None:
-    global logger
-    logger = getLogger(config.verbose)
-    logger.info(config.pretty())
-
-    device = torch.device("cuda" if use_cuda else "cpu")
-    in_dir = to_absolute_path(config.in_dir)
-    out_dir = to_absolute_path(config.out_dir)
-    os.makedirs(out_dir, exist_ok=True)
-
-    model_config = OmegaConf.load(to_absolute_path(config.model.model_yaml))
-    
-    model = hydra.utils.instantiate(model_config.netG).to(device)
-    checkpoint = torch.load(to_absolute_path(config.model.checkpoint),
-        map_location=lambda storage, loc: storage)
-    model.load_state_dict(checkpoint["state_dict"])
-
-    scaler = joblib.load(to_absolute_path(config.out_scaler_path))
-
-    in_feats = FileSourceDataset(NpyFileSource(in_dir))
-
+def generate(config, model, device, in_feats, scaler, out_dir):
     with torch.no_grad():
         for idx in tqdm(range(len(in_feats))):
             feats = torch.from_numpy(in_feats[idx]).unsqueeze(0).to(device)
@@ -64,6 +42,53 @@ def my_app(config : DictConfig) -> None:
             np.save(out_path, out, allow_pickle=False)
 
 
+def resume(config, device, checkpoint, stream_id=None):
+    if stream_id is not None and\
+       len(config.model.stream_sizes) == len(checkpoint):
+        model = hydra.utils.instantiate(config.models[stream_id].netG).to(device)
+        checkpoint = torch.load(to_absolute_path(checkpoint[stream_id]),
+                                map_location=lambda storage, loc: storage)
+    else:
+        model = hydra.utils.instantiate(config.netG).to(device)
+        checkpoint = torch.load(to_absolute_path(checkpoint),
+                                map_location=lambda storage, loc: storage)
+
+    model.load_state_dict(checkpoint["state_dict"])
+
+    return model
+
+@hydra.main(config_path="conf/generate/config.yaml")
+def my_app(config : DictConfig) -> None:
+    global logger
+    logger = getLogger(config.verbose)
+    logger.info(config.pretty())
+
+    device = torch.device("cuda" if use_cuda else "cpu")
+    in_dir = to_absolute_path(config.in_dir)
+
+    model_config = OmegaConf.load(to_absolute_path(config.model.model_yaml))
+
+    scaler = joblib.load(to_absolute_path(config.out_scaler_path))
+    in_feats = FileSourceDataset(NpyFileSource(in_dir))
+        
+    if model_config.model.stream_wise_training and \
+       len(model_config.model.models) == len(config.model.stream_sizes) and \
+       len(config.model.checkpoint) == len(config.model.stream_sizes):
+
+        for stream_id in range(len(model_config.model.stream_sizes)):
+            model = resume(model_config, device, config.model.checkpoint, stream_id)
+        
+            out_dir = to_absolute_path(join(config.out_dir, f"stream_{stream_id}"))
+            os.makedirs(out_dir, exist_ok=True)
+
+            generate(config, model, device, in_feats, scaler, out_dir)
+        else:
+            model = resume(model_config, device, config.model.checkpoint, None)
+
+            out_dir = to_absolute_path(config.out_dir)
+            os.makedirs(out_dir, exist_ok=True)
+            generate(config, model, device, in_feats, scaler, out_dir)
+            
 def entry():
     my_app()
 
