@@ -9,30 +9,30 @@ stream_wise_training: true
 
 models:
   - netG:
-    _target_: nnsvs.model.Conv1dResnet
-    in_dim: 424
-    out_dim: 199
-    hidden_dim: 128
-    num_layers: 6
-    dropout: 0.1
+      _target_: nnsvs.model.Conv1dResnet
+      in_dim: 424
+      out_dim: 199
+      hidden_dim: 128
+      num_layers: 6
+      dropout: 0.1
   - netG:
-    _target_: nnsvs.model.Conv1dResnet
-    in_dim: 424
-    out_dim: 199
-    hidden_dim: 128
-    num_layers: 6
-    dropout: 0.1
+      _target_: nnsvs.model.Conv1dResnet
+      in_dim: 424
+      out_dim: 199
+      hidden_dim: 128
+      num_layers: 6
+      dropout: 0.1
   - netG:
-    _target_: nnsvs.model.Conv1dResnet
-    in_dim: 424
-    out_dim: 199
-    hidden_dim: 128
-    num_layers: 6
-    dropout: 0.1
+      _target_: nnsvs.model.Conv1dResnet
+      in_dim: 424
+      out_dim: 199
+      hidden_dim: 128
+      num_layers: 6
+      dropout: 0.1
   - netG:
-    _target_: nnsvs.model.Conv1dResnet
-    in_dim: 424
-    out_dim: 199
-    hidden_dim: 128
-    num_layers: 6
-    dropout: 0.1
+      _target_: nnsvs.model.Conv1dResnet
+      in_dim: 424
+      out_dim: 199
+      hidden_dim: 128
+      num_layers: 6
+      dropout: 0.1
