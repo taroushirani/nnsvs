@@ -108,10 +108,10 @@ def save_checkpoint(config, model, optimizer, lr_scheduler, epoch, stream_id=Non
     out_dir = to_absolute_path(config.train.out_dir)
     os.makedirs(out_dir, exist_ok=True)
     if stream_id is not None:
-        checkpoint_path = join(out_dir, f"stream_{stream_id}_checkpoint_epoch{:04d}.pth".format(epoch))
+        checkpoint_path = join(out_dir, f"stream_{stream_id}_checkpoint_epoch{epoch:04d}.pth")
         lastest_path = join(out_dir, f"stream_{stream_id}_latest.pth")
     else:
-        checkpoint_path = join(out_dir, "checkpoint_epoch{:04d}.pth".format(epoch))
+        checkpoint_path = join(out_dir, f"checkpoint_epoch{epoch:04d}.pth")
         lastest_path = join(out_dir, "latest.pth")
 
     torch.save({
@@ -233,11 +233,11 @@ def setup(config, device, stream_id=None):
     # Resume
     if type(config.resume.checkpoint) is ListConfig and \
        len(config.resume.checkpoint) == len(config.model.stream_sizes):
-        logger.info("Load weights from {}".format(config.resume.checkpoint[stream_id]))
+        logger.info(f"Load weights from {config.resume.checkpoint[stream_id]}")
         checkpoint = torch.load(to_absolute_path(config.resume.checkpoint[stream_id]))
     elif type(config.resume.checkpoint) is str and \
          len(config.resume.checkpoint) > 0:
-        logger.info("Load weights from {}".format(config.resume.checkpoint))
+        logger.info(f"Load weights from {config.resume.checkpoint}")
         checkpoint = torch.load(to_absolute_path(config.resume.checkpoint))
         
     model.load_state_dict(checkpoint["state_dict"])
