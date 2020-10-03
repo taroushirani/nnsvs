@@ -11,28 +11,28 @@ models:
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
-      out_dim: 199
+      out_dim: 180
       hidden_dim: 128
       num_layers: 6
       dropout: 0.1
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
-      out_dim: 199
+      out_dim: 3
       hidden_dim: 128
       num_layers: 6
       dropout: 0.1
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
-      out_dim: 199
+      out_dim: 1
       hidden_dim: 128
       num_layers: 6
       dropout: 0.1
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
-      out_dim: 199
+      out_dim: 15
       hidden_dim: 128
       num_layers: 6
       dropout: 0.1
