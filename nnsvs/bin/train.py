@@ -274,11 +274,11 @@ def my_app(config : DictConfig) -> None:
         for stream_id in range(len(config.model.stream_sizes)):
             model, optimizer, lr_scheduler = setup(config, device, stream_id)
             # Run training loop
-            train_loop(config, device, model, optimizer, lr_scheduler, data_loaders)
+            train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, stream_id)
     else:
         model, optimizer, lr_scheduler = setup(config, device, None)
         # Run training loop
-        train_loop(config, device, model, optimizer, lr_scheduler, data_loaders)
+        train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, None)
         
     # Save model definition
     out_dir = to_absolute_path(config.train.out_dir)
