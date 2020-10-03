@@ -2,7 +2,7 @@
 
 import hydra
 from hydra.utils import to_absolute_path
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 import numpy as np
 from glob import glob
 from tqdm import tqdm
@@ -217,6 +217,7 @@ def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, str
 
 def setup(config, device, stream_id=None):
 
+    print(stream_id)
     if stream_id is not None:
         model = hydra.utils.instantiate(config.model.models[stream_id].netG).to(device)
     else:
@@ -231,6 +232,7 @@ def setup(config, device, stream_id=None):
     lr_scheduler = lr_scheduler_class(optimizer, **config.optim.lr_scheduler.params)
 
     # Resume
+    checkpoint=None
     if type(config.resume.checkpoint) is ListConfig and \
        len(config.resume.checkpoint) == len(config.model.stream_sizes):
         logger.info(f"Load weights from {config.resume.checkpoint[stream_id]}")
@@ -239,8 +241,10 @@ def setup(config, device, stream_id=None):
          len(config.resume.checkpoint) > 0:
         logger.info(f"Load weights from {config.resume.checkpoint}")
         checkpoint = torch.load(to_absolute_path(config.resume.checkpoint))
-        
-    model.load_state_dict(checkpoint["state_dict"])
+
+    if checkpoint is not None:
+        model.load_state_dict(checkpoint["state_dict"])
+
     if config.resume.load_optimizer:
         logger.info("Load optimizer state")
         optimizer.load_state_dict(checkpoint["optimizer_state"])
@@ -264,8 +268,10 @@ def my_app(config : DictConfig) -> None:
     device = torch.device("cuda" if use_cuda else "cpu")
     
     data_loaders = get_data_loaders(config)
-    if config.model.stream_wise_training and len(config.model.models) == config.model.stream_sizes:
-        for stream_id in range(config.model.stream_sizes):
+
+    if config.model.stream_wise_training and \
+    len(config.model.models) == len(config.model.stream_sizes):
+        for stream_id in range(len(config.model.stream_sizes)):
             model, optimizer, lr_scheduler = setup(config, device, stream_id)
             # Run training loop
             train_loop(config, device, model, optimizer, lr_scheduler, data_loaders)

@@ -178,7 +178,7 @@ fi
 if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     echo "stage 5: Generation features from timelag/duration/acoustic models"
     for s in ${testsets[@]}; do
-        for typ in timelag duration acoustic; do
+        for typ in timelag duration; do
             checkpoint=$expdir/$typ/latest.pth
             name=$(basename $checkpoint)
             xrun nnsvs-generate model.checkpoint=$checkpoint \
@@ -186,6 +186,18 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
                 out_scaler_path=$dump_norm_dir/out_${typ}_scaler.joblib \
                 in_dir=$dump_norm_dir/$s/in_${typ}/ \
                 out_dir=$expdir/$typ/predicted/$s/${name%.*}/
+        for typ in acoustic; do
+            checkpoint=[$expdir/$typ/stream_0_latest.pth,
+			$expdir/$typ/stream_1_latest.pth,
+			$expdir/$typ/stream_2_latest.pth,
+			$expdir/$typ/stream_3_latest.pth]
+            name=$(basename $checkpoint)
+            xrun nnsvs-generate model.checkpoint=$checkpoint \
+                model.model_yaml=$expdir/$typ/model.yaml \
+                out_scaler_path=$dump_norm_dir/out_${typ}_scaler.joblib \
+                in_dir=$dump_norm_dir/$s/in_${typ}/ \
+                out_dir=$expdir/$typ/predicted/$s/${name%.*}/
+	    
         done
     done
 fi
