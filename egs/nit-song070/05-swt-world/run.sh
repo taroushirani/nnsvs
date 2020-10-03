@@ -163,7 +163,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
     else
         resume_checkpoint=
     fi
-    xrun nnsvs-train --cfg all --config-dir hydra/train --config-path config.yaml\
+    xrun nnsvs-train --config-dir hydra/train --config-path config.yaml\
 	data.train_no_dev.in_dir=$dump_norm_dir/$train_set/in_acoustic/ \
         data.train_no_dev.out_dir=$dump_norm_dir/$train_set/out_acoustic/ \
         data.dev.in_dir=$dump_norm_dir/$dev_set/in_acoustic/ \
