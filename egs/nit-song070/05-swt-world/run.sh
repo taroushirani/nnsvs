@@ -72,7 +72,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     # the following three directories will be created
     # 1) data/timelag 2) data/duration 3) data/acoustic
     python utils/data_prep.py $hts_demo_root ./data --gain-normalize
-
+    
     echo "train/dev/eval split"
     mkdir -p data/list
     find data/acoustic/ -type f -name "*.wav" -exec basename {} .wav \; \
@@ -84,11 +84,11 @@ fi
 
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     echo "stage 1: Feature generation"
-
+    
     for s in ${datasets[@]};
     do
-      nnsvs-prepare-features utt_list=data/list/$s.list out_dir=$dump_org_dir/$s/  \
-        question_path=$question_path
+	nnsvs-prepare-features utt_list=data/list/$s.list out_dir=$dump_org_dir/$s/  \
+			     question_path=$question_path
     done
 
     # Compute normalization stats for each input/output
@@ -104,7 +104,7 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
             find $dump_org_dir/$train_set/${inout}_${typ} -name "*feats.npy" > train_list.txt
             scaler_path=$dump_org_dir/${inout}_${typ}_scaler.joblib
             nnsvs-fit-scaler list_path=train_list.txt scaler.class=$scaler_class \
-                out_path=$scaler_path
+			     out_path=$scaler_path
             rm -f train_list.txt
             cp -v $scaler_path $dump_norm_dir/${inout}_${typ}_scaler.joblib
         done
@@ -116,8 +116,8 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
             for typ in timelag duration acoustic;
             do
                 nnsvs-preprocess-normalize in_dir=$dump_org_dir/$s/${inout}_${typ}/ \
-                    scaler_path=$dump_org_dir/${inout}_${typ}_scaler.joblib \
-                    out_dir=$dump_norm_dir/$s/${inout}_${typ}/
+					   scaler_path=$dump_org_dir/${inout}_${typ}_scaler.joblib \
+					   out_dir=$dump_norm_dir/$s/${inout}_${typ}/
             done
         done
     done
@@ -147,12 +147,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
         resume_checkpoint=
     fi
     xrun nnsvs-train data.train_no_dev.in_dir=$dump_norm_dir/$train_set/in_duration/ \
-        data.train_no_dev.out_dir=$dump_norm_dir/$train_set/out_duration/ \
-        data.dev.in_dir=$dump_norm_dir/$dev_set/in_duration/ \
-        data.dev.out_dir=$dump_norm_dir/$dev_set/out_duration/ \
-        model=duration train.out_dir=$expdir/duration \
-        data.batch_size=$batch_size \
-        resume.checkpoint=$resume_checkpoint
+         data.train_no_dev.out_dir=$dump_norm_dir/$train_set/out_duration/ \
+         data.dev.in_dir=$dump_norm_dir/$dev_set/in_duration/ \
+         data.dev.out_dir=$dump_norm_dir/$dev_set/out_duration/ \
+         model=duration train.out_dir=$expdir/duration \
+         data.batch_size=$batch_size \
+         resume.checkpoint=$resume_checkpoint
 fi
 
 
@@ -164,13 +164,13 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
         resume_checkpoint=
     fi
     xrun nnsvs-train --config-dir hydra/train --config-path config.yaml\
-	data.train_no_dev.in_dir=$dump_norm_dir/$train_set/in_acoustic/ \
-        data.train_no_dev.out_dir=$dump_norm_dir/$train_set/out_acoustic/ \
-        data.dev.in_dir=$dump_norm_dir/$dev_set/in_acoustic/ \
-        data.dev.out_dir=$dump_norm_dir/$dev_set/out_acoustic/ \
-        model=acoustic train.out_dir=$expdir/acoustic \
-        data.batch_size=$batch_size \
-        resume.checkpoint=$resume_checkpoint
+	 data.train_no_dev.in_dir=$dump_norm_dir/$train_set/in_acoustic/ \
+         data.train_no_dev.out_dir=$dump_norm_dir/$train_set/out_acoustic/ \
+         data.dev.in_dir=$dump_norm_dir/$dev_set/in_acoustic/ \
+         data.dev.out_dir=$dump_norm_dir/$dev_set/out_acoustic/ \
+         model=acoustic train.out_dir=$expdir/acoustic \
+         data.batch_size=$batch_size \
+         resume.checkpoint=$resume_checkpoint
 fi
 
 
@@ -182,10 +182,11 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
             checkpoint=$expdir/$typ/latest.pth
             name=$(basename $checkpoint)
             xrun nnsvs-generate model.checkpoint=$checkpoint \
-                model.model_yaml=$expdir/$typ/model.yaml \
-                out_scaler_path=$dump_norm_dir/out_${typ}_scaler.joblib \
-                in_dir=$dump_norm_dir/$s/in_${typ}/ \
-                out_dir=$expdir/$typ/predicted/$s/${name%.*}/
+                 model.model_yaml=$expdir/$typ/model.yaml \
+                 out_scaler_path=$dump_norm_dir/out_${typ}_scaler.joblib \
+                 in_dir=$dump_norm_dir/$s/in_${typ}/ \
+                 out_dir=$expdir/$typ/predicted/$s/${name%.*}/
+	done
         for typ in acoustic; do
             checkpoint=[$expdir/$typ/stream_0_latest.pth,
 			$expdir/$typ/stream_1_latest.pth,

@@ -22,7 +22,7 @@ logger = None
 
 use_cuda = torch.cuda.is_available()
 
-def generate(config, model, device, in_feats, scaler, out_dir):
+def generate(config, model, device, in_feats, scaler, out_dir, stream_id=None):
     with torch.no_grad():
         for idx in tqdm(range(len(in_feats))):
             feats = torch.from_numpy(in_feats[idx]).unsqueeze(0).to(device)
@@ -38,7 +38,10 @@ def generate(config, model, device, in_feats, scaler, out_dir):
                     model_config.has_dynamic_features)
 
             name = basename(in_feats.collected_files[idx][0])
-            out_path = join(out_dir, name)
+            if stream_id is not None:
+                out_path = join(out_dir, name + f"_stream_{stream_id}")
+            else:
+                out_path = join(out_dir, name)
             np.save(out_path, out, allow_pickle=False)
 
 
@@ -65,6 +68,8 @@ def my_app(config : DictConfig) -> None:
 
     device = torch.device("cuda" if use_cuda else "cpu")
     in_dir = to_absolute_path(config.in_dir)
+    out_dir = to_absolute_path(config.out_dir)
+    os.makedirs(out_dir, exist_ok=True)
 
     model_config = OmegaConf.load(to_absolute_path(config.model.model_yaml))
 
@@ -77,17 +82,10 @@ def my_app(config : DictConfig) -> None:
 
         for stream_id in range(len(model_config.model.stream_sizes)):
             model = resume(model_config, device, config.model.checkpoint, stream_id)
-        
-            out_dir = to_absolute_path(join(config.out_dir, f"stream_{stream_id}"))
-            os.makedirs(out_dir, exist_ok=True)
-
-            generate(config, model, device, in_feats, scaler, out_dir)
-        else:
-            model = resume(model_config, device, config.model.checkpoint, None)
-
-            out_dir = to_absolute_path(config.out_dir)
-            os.makedirs(out_dir, exist_ok=True)
-            generate(config, model, device, in_feats, scaler, out_dir)
+            generate(config, model, device, in_feats, scaler, out_dir, stream_id)
+    else:
+        model = resume(model_config, device, config.model.checkpoint, None)
+        generate(config, model, device, in_feats, scaler, out_dir, None)
             
 def entry():
     my_app()
