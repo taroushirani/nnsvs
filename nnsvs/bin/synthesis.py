@@ -72,16 +72,16 @@ def synthesis(config, device, label_path, question_path,
 
 def resume(config, device, checkpoint, stream_id=None):
     if stream_id is not None and\
-       len(config.model.stream_sizes) == len(checkpoint):
+       len(config.stream_sizes) == len(checkpoint):
         model = hydra.utils.instantiate(config.models[stream_id].netG).to(device)
-        checkpoint = torch.load(to_absolute_path(checkpoint[stream_id]),
-                                map_location=lambda storage, loc: storage)
+        cp = torch.load(to_absolute_path(checkpoint[stream_id]),
+                        map_location=lambda storage, loc: storage)
     else:
         model = hydra.utils.instantiate(config.netG).to(device)
-        checkpoint = torch.load(to_absolute_path(checkpoint),
-                                map_location=lambda storage, loc: storage)
+        cp = torch.load(to_absolute_path(checkpoint),
+                        map_location=lambda storage, loc: storage)
 
-    model.load_state_dict(checkpoint["state_dict"])
+    model.load_state_dict(cp["state_dict"])
 
     return model
 
@@ -99,30 +99,38 @@ def my_app(config : DictConfig) -> None:
 
     # timelag
     timelag_config = OmegaConf.load(to_absolute_path(config.timelag.model_yaml))
-    if timelag_config.model.stream_wise_training:
-        logger.info(f"Stream-wise training of timelag model is not supported")
-    timelag_model = resume(timelag_config, device, config.timelag.checkpoint, None)
-    timelag_in_scaler = joblib.load(to_absolute_path(config.timelag.in_scaler_path))
-    timelag_out_scaler = joblib.load(to_absolute_path(config.timelag.out_scaler_path))
-    timelag_model.eval()
+    if timelag_config.stream_wise_training and \
+       len(timelag_config.models) == len(timelag_config.stream_sizes) and \
+       len(config.timelag.checkpoint) == len(timelag_config.stream_sizes):
+        timelag_model = []
+        for stream_id in range(len(timelag_config.stream_sizes)):
+            model = resume(timelag_config, device, config.timelag.checkpoint, stream_id)
+            timelag_model.append(model.eval())
+    else:
+        timelag_model = resume(timelag_config, device, config.timelag.checkpoint, None)
+        timelag_model.eval()
 
     # duration
     duration_config = OmegaConf.load(to_absolute_path(config.duration.model_yaml))
-    if duration_config.model.stream_wise_training:
-        logger.info(f"Stream-wise training of duration model is not supported")
-    duration_model = resume(timelag_config, device, config.duration.checkpoint, None)
-    duration_in_scaler = joblib.load(to_absolute_path(config.timelag.in_scaler_path))
-    duration_out_scaler = joblib.load(to_absolute_path(config.timelag.out_scaler_path))
-    duration_model.eval()
+    if duration_config.stream_wise_training and \
+       len(duration_config.models) == len(duration_config.stream_sizes) and \
+       len(config.duration.checkpoint) == len(duration_config.stream_sizes):
+        duration_model = []
+        for stream_id in range(len(duration_config.stream_sizes)):
+            model = resume(duration_config, device, config.duration.checkpoint, stream_id)
+            duration_model.append(model.eval())
+    else:
+        duration_model = resume(duration_config, device, config.duration.checkpoint, None)
+        duration_model.eval()
     
     # acoustic model
     acoustic_config = OmegaConf.load(to_absolute_path(config.acoustic.model_yaml))
-    if acoustic_config.model.stream_wise_training and \
-       len(acoustic_config.model.models) == len(acoustic_config.model.stream_sizes) and \
-       len(config.acoustic.checkpoint) == len(acoustic_config.model.stream_sizes):
+    if acoustic_config.stream_wise_training and \
+       len(acoustic_config.models) == len(acoustic_config.stream_sizes) and \
+       len(config.acoustic.checkpoint) == len(acoustic_config.stream_sizes):
         acoustic_model = []
-        for stream_id in range(len(model_config.model.stream_sizes)):
-            model = resume(model_config, device, config.acoustic.checkpoint, stream_id)
+        for stream_id in range(len(acoustic_config.stream_sizes)):
+            model = resume(acoustic_config, device, config.acoustic.checkpoint, stream_id)
             acoustic_model.append(model.eval())
     else:
         acoustic_model = resume(acoustic_config, device, config.acoustic.checkpoint, None)

@@ -271,10 +271,12 @@ def my_app(config : DictConfig) -> None:
 
     if config.model.stream_wise_training and \
     len(config.model.models) == len(config.model.stream_sizes):
+        logger.info(f"stream-wise training is enabled")
         for stream_id in range(len(config.model.stream_sizes)):
             model, optimizer, lr_scheduler = setup(config, device, stream_id)
             # Run training loop
             train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, stream_id)
+            del model, optimizer, lr_scheduler
     else:
         model, optimizer, lr_scheduler = setup(config, device, None)
         # Run training loop

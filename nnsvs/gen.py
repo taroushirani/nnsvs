@@ -81,8 +81,17 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
 
     # Run model
     x = torch.from_numpy(timelag_linguistic_features).unsqueeze(0).to(device)
-    y = timelag_model(x, [x.shape[1]]).squeeze(0).cpu()
-
+    if timelag_config.stream_wise_training and \
+       type(timelag_model) is list and \
+       len(timelag_model) == len(timelag_config.stream_sizes):
+        # stream-wise trained model
+        y = []
+        for stream_id in range(len(timelag_config.stream_sizes)):
+            y.append(timelag_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu()
+        y =  np.concatenate(y, -1)
+    else:            
+        y = timelag_model(x, [x.shape[1]]).squeeze(0).cpu()
+        
     # De-normalization and rounding
     lag = np.round(timelag_out_scaler.inverse_transform(y.data.numpy()))
 
@@ -160,7 +169,16 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
     # Apply model
     x = torch.from_numpy(duration_linguistic_features).float().to(device)
     x = x.view(1, -1, x.size(-1))
-    pred_durations = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
+    if duration_config.stream_wise_training and \
+       type(duration_model) is list and \
+       len(duration_model) == len(duration_config.stream_sizes):
+        # stream-wise trained model
+        pred_duration = []
+        for stream_id in range(len(duration_config.stream_sizes)):
+            pred_duration.append(duration_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu().data.numpy())
+        pred_duration =  np.concatenate(pred_duration, -1)
+    else:            
+        pred_duration = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
 
     # Apply denormalization
     pred_durations = duration_out_scaler.inverse_transform(pred_durations)
@@ -203,9 +221,9 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
        len(acoustic_model) == len(acoustic_config.stream_sizes):
         # stream-wise trained model
         pred_acoustic = []
-        for stream_id in range(len(model_config.stream_sizes)):
+        for stream_id in range(len(acoustic_config.stream_sizes)):
             pred_acoustic.append(acoustic_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu().data.numpy())
-        pred_acoutic =  np.concatenate(pred_acoustic, -1)
+        pred_acoustic =  np.concatenate(pred_acoustic, -1)
     else:            
         pred_acoustic = acoustic_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
 
