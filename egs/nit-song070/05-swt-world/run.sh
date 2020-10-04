@@ -15,7 +15,7 @@ hts_demo_root=downloads/HTS-demo_NIT-SONG070-F001
 
 # Pretrained model dir
 # leave empty to disable
-pretrained_expdir=../../kiritan_singing/00-svs-world/exp/kiritan
+pretrained_expdir=
 
 batch_size=4
 
@@ -221,7 +221,10 @@ if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
             duration.in_scaler_path=$dump_norm_dir/in_duration_scaler.joblib \
             duration.out_scaler_path=$dump_norm_dir/out_duration_scaler.joblib \
             duration.model_yaml=$expdir/duration/model.yaml \
-            acoustic.checkpoint=$expdir/acoustic/latest.pth \
+            acoustic.checkpoint=[$expdir/$typ/stream_0_latest.pth, \
+				 $expdir/$typ/stream_1_latest.pth, \
+				 $expdir/$typ/stream_2_latest.pth, \
+				 $expdir/$typ/stream_3_latest.pth] \
             acoustic.in_scaler_path=$dump_norm_dir/in_acoustic_scaler.joblib \
             acoustic.out_scaler_path=$dump_norm_dir/out_acoustic_scaler.joblib \
             acoustic.model_yaml=$expdir/acoustic/model.yaml \
