@@ -188,10 +188,7 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
                  out_dir=$expdir/$typ/predicted/$s/${name%.*}/
 	done
         for typ in acoustic; do
-            checkpoint=[$expdir/$typ/stream_0_latest.pth,
-			$expdir/$typ/stream_1_latest.pth,
-			$expdir/$typ/stream_2_latest.pth,
-			$expdir/$typ/stream_3_latest.pth]
+            checkpoint=[$expdir/$typ/stream_0_latest.pth,$expdir/$typ/stream_1_latest.pth,$expdir/$typ/stream_2_latest.pth,$expdir/$typ/stream_3_latest.pth]
             name=latest
             xrun nnsvs-generate model.checkpoint=$checkpoint \
                  model.model_yaml=$expdir/$typ/model.yaml \

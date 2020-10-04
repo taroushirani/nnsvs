@@ -22,32 +22,40 @@ logger = None
 
 use_cuda = torch.cuda.is_available()
 
-def generate(config, model, device, in_feats, scaler, out_dir, stream_id=None):
+def generate(config, model, device, in_feats, scaler, out_dir):
     with torch.no_grad():
         for idx in tqdm(range(len(in_feats))):
             feats = torch.from_numpy(in_feats[idx]).unsqueeze(0).to(device)
-            out = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
 
+            if config.stream_wise_training and \
+               type(model) is list and \
+               len(model) == len(config.stream_sizes):
+                # stream-wise trained model
+                out = []
+                for stream_id in range(len(config.stream_sizes)):
+                    out.append(model[stream_id](feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy())
+                out = np.concatenate(out, -1)
+            else:
+                out = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
+            
             out = scaler.inverse_transform(out)
 
             # Apply MLPG if necessary
-            if np.any(model_config.has_dynamic_features):
+            print(f"config.has_dynamic_features: {config.has_dynamic_features}")
+            if np.any(config.has_dynamic_features):
                 windows = get_windows(3)
                 out = multi_stream_mlpg(
-                    out, scaler.var_, windows, model_config.stream_sizes,
-                    model_config.has_dynamic_features)
+                    out, scaler.var_, windows, config.stream_sizes,
+                    config.has_dynamic_features)
 
             name = basename(in_feats.collected_files[idx][0])
-            if stream_id is not None:
-                out_path = join(out_dir, name + f"_stream_{stream_id}")
-            else:
-                out_path = join(out_dir, name)
+            out_path = join(out_dir, name)
             np.save(out_path, out, allow_pickle=False)
 
 
 def resume(config, device, checkpoint, stream_id=None):
     if stream_id is not None and\
-       len(config.model.stream_sizes) == len(checkpoint):
+       len(config.stream_sizes) == len(checkpoint):
         model = hydra.utils.instantiate(config.models[stream_id].netG).to(device)
         checkpoint = torch.load(to_absolute_path(checkpoint[stream_id]),
                                 map_location=lambda storage, loc: storage)
@@ -76,16 +84,16 @@ def my_app(config : DictConfig) -> None:
     scaler = joblib.load(to_absolute_path(config.out_scaler_path))
     in_feats = FileSourceDataset(NpyFileSource(in_dir))
         
-    if model_config.model.stream_wise_training and \
-       len(model_config.model.models) == len(config.model.stream_sizes) and \
-       len(config.model.checkpoint) == len(config.model.stream_sizes):
-
-        for stream_id in range(len(model_config.model.stream_sizes)):
-            model = resume(model_config, device, config.model.checkpoint, stream_id)
-            generate(config, model, device, in_feats, scaler, out_dir, stream_id)
+    if model_config.stream_wise_training and \
+       len(model_config.models) == len(model_config.stream_sizes) and \
+       len(config.model.checkpoint) == len(model_config.stream_sizes):
+        model = []
+        for stream_id in range(len(model_config.stream_sizes)):
+            model.append(resume(model_config, device, config.model.checkpoint, stream_id))
     else:
         model = resume(model_config, device, config.model.checkpoint, None)
-        generate(config, model, device, in_feats, scaler, out_dir, None)
+        
+    generate(model_config, model, device, in_feats, scaler, out_dir)
             
 def entry():
     my_app()
