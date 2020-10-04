@@ -87,7 +87,7 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
         # stream-wise trained model
         y = []
         for stream_id in range(len(timelag_config.stream_sizes)):
-            y.append(timelag_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu()
+            y.append(timelag_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu())
         y =  np.concatenate(y, -1)
     else:            
         y = timelag_model(x, [x.shape[1]]).squeeze(0).cpu()
