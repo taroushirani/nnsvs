@@ -8,6 +8,7 @@ stream_weights:
 stream_wise_training: true
 
 models:
+  # mgc
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
@@ -15,6 +16,7 @@ models:
       hidden_dim: 128
       num_layers: 6
       dropout: 0.1
+  # f0
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
@@ -22,6 +24,7 @@ models:
       hidden_dim: 128
       num_layers: 6
       dropout: 0.1
+  # vuv
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
@@ -29,6 +32,7 @@ models:
       hidden_dim: 128
       num_layers: 6
       dropout: 0.1
+  # bap
   - netG:
       _target_: nnsvs.model.Conv1dResnet
       in_dim: 424
