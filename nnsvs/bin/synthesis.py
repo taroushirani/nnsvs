@@ -110,6 +110,9 @@ def my_app(config : DictConfig) -> None:
         timelag_model = resume(timelag_config, device, config.timelag.checkpoint, None)
         timelag_model.eval()
 
+    timelag_in_scaler = joblib.load(to_absolute_path(config.timelag.in_scaler_path))
+    timelag_out_scaler = joblib.load(to_absolute_path(config.timelag.out_scaler_path))
+
     # duration
     duration_config = OmegaConf.load(to_absolute_path(config.duration.model_yaml))
     if duration_config.stream_wise_training and \
@@ -122,7 +125,10 @@ def my_app(config : DictConfig) -> None:
     else:
         duration_model = resume(duration_config, device, config.duration.checkpoint, None)
         duration_model.eval()
-    
+
+    duration_in_scaler = joblib.load(to_absolute_path(config.duration.in_scaler_path))
+    duration_out_scaler = joblib.load(to_absolute_path(config.duration.out_scaler_path))
+        
     # acoustic model
     acoustic_config = OmegaConf.load(to_absolute_path(config.acoustic.model_yaml))
     if acoustic_config.stream_wise_training and \
