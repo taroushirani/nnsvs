@@ -57,14 +57,14 @@ def resume(config, device, checkpoint, stream_id=None):
     if stream_id is not None and\
        len(config.stream_sizes) == len(checkpoint):
         model = hydra.utils.instantiate(config.models[stream_id].netG).to(device)
-        checkpoint = torch.load(to_absolute_path(checkpoint[stream_id]),
-                                map_location=lambda storage, loc: storage)
+        cp = torch.load(to_absolute_path(checkpoint[stream_id]),
+                        map_location=lambda storage, loc: storage)
     else:
         model = hydra.utils.instantiate(config.netG).to(device)
-        checkpoint = torch.load(to_absolute_path(checkpoint),
-                                map_location=lambda storage, loc: storage)
+        cp = torch.load(to_absolute_path(checkpoint),
+                        map_location=lambda storage, loc: storage)
 
-    model.load_state_dict(checkpoint["state_dict"])
+    model.load_state_dict(cp["state_dict"])
 
     return model
 
