@@ -178,7 +178,7 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
             pred_durations.append(duration_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu().data.numpy())
         pred_durations =  np.concatenate(pred_durations, -1)
     else:            
-        pred_duration = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
+        pred_durations = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
 
     # Apply denormalization
     pred_durations = duration_out_scaler.inverse_transform(pred_durations)
