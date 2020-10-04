@@ -199,7 +199,7 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
     x = torch.from_numpy(linguistic_features).float().to(device)
     x = x.view(1, -1, x.size(-1))
     if acoustic_config.stream_wise_training and \
-       type(acoustic_model) is List: and \
+       type(acoustic_model) is List and \
        len(acoustic_model) == len(acoustic_config.stream_sizes):
 
         pred_acoustic = []
