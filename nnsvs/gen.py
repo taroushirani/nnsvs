@@ -173,10 +173,10 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
        type(duration_model) is list and \
        len(duration_model) == len(duration_config.stream_sizes):
         # stream-wise trained model
-        pred_duration = []
+        pred_durations = []
         for stream_id in range(len(duration_config.stream_sizes)):
-            pred_duration.append(duration_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu().data.numpy())
-        pred_duration =  np.concatenate(pred_duration, -1)
+            pred_durations.append(duration_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu().data.numpy())
+        pred_durations =  np.concatenate(pred_durations, -1)
     else:            
         pred_duration = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
 
