@@ -105,7 +105,7 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
         pred_timelag = timelag_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
         # Apply denormalization
         pred_timelag = timelag_out_scaler.inverse_transform(pred_timelag)
-        if np.any(duraton_config.has_dynamic_features):
+        if np.any(duration_config.has_dynamic_features):
             # (T, D_out) -> (T, static_dim)
             pred_timelag = multi_stream_mlpg(
                 pred_timelag, timelag_out_scaler.var_, get_windows(timelag_config.num_windows),
@@ -211,7 +211,7 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
         pred_durations = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
         # Apply denormalization
         pred_durations = duration_out_scaler.inverse_transform(pred_durations)
-        if np.any(duraton_config.has_dynamic_features):
+        if np.any(duration_config.has_dynamic_features):
             # (T, D_out) -> (T, static_dim)
             pred_durations = multi_stream_mlpg(
                 pred_durations, duration_out_scaler.var_, get_windows(duration_config.num_windows),
