@@ -142,7 +142,6 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
 	model.netG.hidden_dim=1024 \
 	model.netG.num_layers=4 \
 	+model.netG.num_gaussians=$num_gaussians \
-	+model.netG.bidirectional=True \
         data.batch_size=$batch_size \
 	train.nepochs=$nepochs \
         resume.checkpoint=$resume_checkpoint 
@@ -165,6 +164,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
 	model.netG.hidden_dim=1024 \
 	model.netG.num_layers=4 \
 	+model.netG.num_gaussians=$num_gaussians \
+	~model.netG.bidirectional=True \
         data.batch_size=$batch_size \
 	train.nepochs=$nepochs \
         resume.checkpoint=$resume_checkpoint
@@ -187,7 +187,6 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
 	model.netG.hidden_dim=1024 \
 	model.netG.num_layers=4 \
 	+model.netG.num_gaussians=$num_gaussians \
-	+model.netG.bidirectional=True \
         data.batch_size=$batch_size \
 	train.nepochs=$nepochs \
         resume.checkpoint=$resume_checkpoint 
