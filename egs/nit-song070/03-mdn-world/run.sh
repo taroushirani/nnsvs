@@ -20,7 +20,7 @@ pretrained_expdir=
 
 batch_size=4
 nepochs=50
-num_gaussians=2
+num_gaussians=4
 
 stage=0
 stop_stage=0
