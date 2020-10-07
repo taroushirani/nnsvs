@@ -15,7 +15,7 @@ from nnsvs.io.hts import get_note_indices
 from nnsvs.multistream import multi_stream_mlpg, get_static_stream_sizes
 from nnsvs.multistream import select_streams, split_streams
 
-from nnsvs.mdn import mdn_get_most_probable_sigma_and_mu
+from nnsvs.mdn import mdn_get_most_probable_sigma_and_mu, mdn_get_sample
 
 def get_windows(num_window=1):
     windows = [(0, 0, np.array([1.0]))]
@@ -81,6 +81,9 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
             timelag_in_scaler.feature_range[1])
 
     # Run model
+    x = torch.from_numpy(timelag_linguistic_features).unsqueeze(0).to(device)
+
+    # Run model
     if timelag_model.prediction_type == "probabilistic":
         # (B, T, D_out)
         pi, sigma, mu = timelag_model(x, [x.shape[1]])
@@ -88,14 +91,15 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
             max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(pi, sigma, mu)
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
-            max_sigma = timelag_out_scaler.inverse_transform(max_sigma.squeeze(0).cpu().data.numpy())
+            max_sigma = max_sigma.squeeze(0).cpu().data.numpy() * timelag_out_scaler.var_
             max_mu = timelag_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
             # (T, D_out) -> (T, static_dim)
             pred_timelag = multi_stream_mlpg(max_mu, max_sigma, get_windows(timelag_config.num_windows),
                                               timelag_config.stream_sizes, timelag_config.has_dynamic_features)
         else:
             pred_timelag = mdn_get_sample(pi, sigma, mu).squeeze(0).cpu().data.numpy()
-            
+            # Apply denormalization
+            pred_timelag = timelag_out_scaler.inverse_transform(pred_timelag)
     else:
         # (T, D_out)
         pred_timelag = timelag_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
@@ -192,24 +196,25 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
             max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(pi, sigma, mu)
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
-            max_sigma = duration_out_scaler.inverse_transform(max_sigma.squeeze(0).cpu().data.numpy())
+            max_sigma = max_sigma.squeeze(0).cpu().data.numpy() * duration_out_scaler.var_
             max_mu = duration_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
             
             # (T, D_out) -> (T, static_dim)
-            pred_duration = multi_stream_mlpg(max_mu, max_sigma, get_windows(duration_config.num_windows),
+            pred_durations = multi_stream_mlpg(max_mu, max_sigma, get_windows(duration_config.num_windows),
                                               duration_config.stream_sizes, duration_config.has_dynamic_features)
         else:
-            pred_duration = mdn_get_sample(pi, sigma, mu).squeeze(0).cpu().data.numpy()
-            
+            pred_durations = mdn_get_sample(pi, sigma, mu).squeeze(0).cpu().data.numpy()
+            # Apply denormalization
+            pred_durations = duration_out_scaler.inverse_transform(pred_durations)
     else:
         # (T, D_out)
-        pred_duration = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
+        pred_durations = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
         # Apply denormalization
-        pred_duration = duration_out_scaler.inverse_transform(pred_duration)
+        pred_durations = duration_out_scaler.inverse_transform(pred_durations)
         if np.any(duraton_config.has_dynamic_features):
             # (T, D_out) -> (T, static_dim)
-            pred_duration = multi_stream_mlpg(
-                pred_duration, duration_out_scaler.var_, get_windows(duration_config.num_windows),
+            pred_durations = multi_stream_mlpg(
+                pred_durations, duration_out_scaler.var_, get_windows(duration_config.num_windows),
                 duration_config.stream_sizes, duration_config.has_dynamic_features)
 
     pred_durations[pred_durations <= 0] = 1
@@ -254,7 +259,7 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
 
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
-            max_sigma = acoustic_out_scaler.inverse_transform(max_sigma.squeeze(0).cpu().data.numpy())
+            max_sigma = max_sigma.squeeze(0).cpu().data.numpy() * acoustic_out_scaler.var_
             max_mu = acoustic_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
             
             # (T, D_out) -> (T, static_dim)
@@ -262,6 +267,8 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
                                               acoustic_config.stream_sizes, acoustic_config.has_dynamic_features)
         else:
             pred_acoustic = mdn_get_sample(pi, sigma, mu).squeeze(0).cpu().data.numpy()
+            # Apply denormalization
+            pred_acoustic = acoustic_out_scaler.inverse_transform(pred_acoustic)
     else:
         # (T, D_out)
         pred_acoustic = acoustic_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()

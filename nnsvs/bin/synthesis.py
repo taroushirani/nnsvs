@@ -63,7 +63,7 @@ def synthesis(config, device, label_path, question_path,
         binary_dict, continuous_dict, acoustic_config.stream_sizes,
         acoustic_config.has_dynamic_features,
         config.acoustic.subphone_features, log_f0_conditioning,
-        pitch_idx, config.acoustic.num_windows,
+        pitch_idx, acoustic_config.num_windows,
         config.acoustic.post_filter, config.sample_rate, config.frame_period,
         config.acoustic.relative_f0)
 
