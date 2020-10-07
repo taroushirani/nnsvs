@@ -114,7 +114,6 @@ def multi_stream_mlpg(inputs, variances, windows,
             continue
         x = inputs[:, in_start_idx:in_end_idx]
         if inputs.shape == variances.shape:
-            print(variances[variances < 0])
             var_ = variances[:, in_start_idx:in_end_idx]
         else:
             var_ = np.tile(variances[in_start_idx:in_end_idx], (T, 1))
