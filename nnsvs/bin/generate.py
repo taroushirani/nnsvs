@@ -55,7 +55,6 @@ def my_app(config : DictConfig) -> None:
                 
                 if np.any(model_config.has_dynamic_features):
                     max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(pi, sigma, mu)
-                    print(f"max_sigma < 0: {max_sigma[max_sigma < 0]}")
                    
                     # Apply denormalization
                     # (B, T, D_out) -> (T, D_out)
