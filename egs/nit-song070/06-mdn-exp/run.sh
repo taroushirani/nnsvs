@@ -140,9 +140,6 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
         data.dev.in_dir=$dump_norm_dir/$dev_set/in_timelag/ \
         data.dev.out_dir=$dump_norm_dir/$dev_set/out_timelag/ \
         model=timelag train.out_dir=$expdir/timelag \
-	model.netG._target_=nnsvs.model.MDN \
-	model.netG.hidden_dim=1024 \
-	model.netG.num_layers=4 \
         data.batch_size=$batch_size \
 	train.nepochs=$nepochs \
         resume.checkpoint=$resume_checkpoint 
