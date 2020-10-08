@@ -1,0 +1,62 @@
+# @package _global_
+
+defaults:
+  - hydra/job_logging: colorlog
+  - hydra/hydra_logging: colorlog
+
+verbose: 100
+
+device: cuda # or cpu
+
+# Input can be either specified by
+# 1) utt_list and in_dir
+# 2) label path
+# The former is useful for batch experiments, and latter is useful
+# for testing.
+
+# (1)
+utt_list:
+in_dir:
+out_dir:
+
+# (2)
+label_path:
+out_wav_path:
+
+
+sample_rate: 48000
+frame_period: 5
+question_path: path/to/qst.hed
+log_f0_conditioning: true
+
+# Use ground truth duration or not
+# if true, time-lag and duration models will not be used.
+ground_truth_duration: false
+
+timelag:
+  question_path:
+  checkpoint:
+  in_scaler_path:
+  out_scaler_path:
+  model_yaml:
+
+  allowed_range: [-20, 20] # in frames
+  allowed_range_rest: [-40, 40]
+
+duration:
+  question_path:
+  checkpoint:
+  in_scaler_path:
+  out_scaler_path:
+  model_yaml:
+
+acoustic:
+  question_path:
+  checkpoint:
+  in_scaler_path:
+  out_scaler_path:
+  model_yaml:
+  subphone_features: coarse_coding
+  # (mgc, lf0, vuv, bap)
+  relative_f0: true
+  post_filter: true

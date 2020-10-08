@@ -1,0 +1,17 @@
+# @package _global_
+
+defaults:
+  - hydra/job_logging: colorlog
+  - hydra/hydra_logging: colorlog
+
+verbose: 100
+
+in_dir:
+out_dir:
+
+out_scaler_path:
+
+model:
+  checkpoint:
+  model_yaml:
+
