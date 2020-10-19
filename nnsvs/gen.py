@@ -82,6 +82,7 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
 
     # Run model
     x = torch.from_numpy(timelag_linguistic_features).unsqueeze(0).to(device)
+<<<<<<< HEAD
 
     # Run model
     if timelag_model.prediction_type == "probabilistic":
@@ -113,6 +114,21 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
 
     # Rounding
     pred_timelag = np.round(pred_timelag)
+=======
+    if timelag_config.stream_wise_training and \
+       type(timelag_model) is list and \
+       len(timelag_model) == len(timelag_config.stream_sizes):
+        # stream-wise trained model
+        y = []
+        for stream_id in range(len(timelag_config.stream_sizes)):
+            y.append(timelag_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu())
+        y =  np.concatenate(y, -1)
+    else:            
+        y = timelag_model(x, [x.shape[1]]).squeeze(0).cpu()
+        
+    # De-normalization and rounding
+    lag = np.round(timelag_out_scaler.inverse_transform(y.data.numpy()))
+>>>>>>> swt_dev
 
     # Clip to the allowed range
     for idx in range(len(pred_timelag)):
@@ -188,6 +204,19 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
     # Apply model
     x = torch.from_numpy(duration_linguistic_features).float().to(device)
     x = x.view(1, -1, x.size(-1))
+<<<<<<< HEAD
+=======
+    if duration_config.stream_wise_training and \
+       type(duration_model) is list and \
+       len(duration_model) == len(duration_config.stream_sizes):
+        # stream-wise trained model
+        pred_durations = []
+        for stream_id in range(len(duration_config.stream_sizes)):
+            pred_durations.append(duration_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu().data.numpy())
+        pred_durations =  np.concatenate(pred_durations, -1)
+    else:            
+        pred_durations = duration_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
+>>>>>>> swt_dev
 
     if duration_model.prediction_type == "probabilistic":
         # (B, T, D_out)
@@ -222,10 +251,18 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
 
     return pred_durations
 
+<<<<<<< HEAD
 def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_in_scaler,
         acoustic_out_scaler, binary_dict, continuous_dict,
         subphone_features="coarse_coding",
         pitch_indices=None, log_f0_conditioning=True):
+=======
+
+def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_in_scaler,
+                     acoustic_out_scaler, binary_dict, continuous_dict,
+                     subphone_features="coarse_coding",
+                     pitch_indices=None, log_f0_conditioning=True):
+>>>>>>> swt_dev
 
     # Musical/linguistic features
     linguistic_features = fe.linguistic_features(labels,
@@ -250,6 +287,19 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
     # Predict acoustic features
     x = torch.from_numpy(linguistic_features).float().to(device)
     x = x.view(1, -1, x.size(-1))
+<<<<<<< HEAD
+=======
+    if acoustic_config.stream_wise_training and \
+       type(acoustic_model) is list and \
+       len(acoustic_model) == len(acoustic_config.stream_sizes):
+        # stream-wise trained model
+        pred_acoustic = []
+        for stream_id in range(len(acoustic_config.stream_sizes)):
+            pred_acoustic.append(acoustic_model[stream_id](x, [x.shape[1]]).squeeze(0).cpu().data.numpy())
+        pred_acoustic =  np.concatenate(pred_acoustic, -1)
+    else:            
+        pred_acoustic = acoustic_model(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
+>>>>>>> swt_dev
 
     if acoustic_model.prediction_type == "probabilistic":
         pi, sigma, mu = acoustic_model(x, [x.shape[1]])
