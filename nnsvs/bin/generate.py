@@ -24,80 +24,74 @@ logger = None
 use_cuda = torch.cuda.is_available()
 
 
-def predict(config, model, device, feats, scaler):
+def predict(config, model, device, in_feats, scaler, start_idx=0, end_idx=None):
+    feats = torch.from_numpy(in_feats).unsqueeze(0).to(device)
     if model.prediction_type == "probabilistic":
-    pi, sigma, mu = model(feats, [feats.shape[1]])
-                
-    if np.any(model_config.has_dynamic_features):
+        pi, sigma, mu = model(feats, [feats.shape[1]])
         max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(pi, sigma, mu)
                    
         # Apply denormalization
         # (B, T, D_out) -> (T, D_out)
-        max_sigma = max_sigma.squeeze(0).cpu().data.numpy() * scaler.var_
-        max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
-        # Apply MLPG
-        # (T, D_out) -> (T, static_dim)
-        out = multi_stream_mlpg(max_mu, max_sigma, get_windows(model_config.num_windows),
-                                model_config.stream_sizes, model_config.has_dynamic_features)
+        var = max_sigma.squeeze(0).cpu().data.numpy() * scaler.var_[start_idx:end_idx]
+        mean = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
 
-                else:
-                    # (T, D_out)
-                    out = mdn_get_sample(pi, sigma, mu).squeeze(0).cpu().data.numpy()
-                    out = scaler.inverse_transform(out)
-            else:
-                out = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
-                out = scaler.inverse_transform(out)
+    else:
+        mean = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
 
-                # Apply MLPG if necessary
-                if np.any(model_config.has_dynamic_features):
-                    out = multi_stream_mlpg(
-                        out, scaler.var_, get_windows(model_config.num_windows),
-                        model_config.stream_sizes, model_config.has_dynamic_features)
-    
+        # Apply denormalization
+        mean = scaler.inverse_transform(out)
+        var = scaler.var_[start_idx:end_idx]
 
+    return mean, var
+r
 def generate(config, models, device, in_feats, scaler, out_dir):
+
+
     with torch.no_grad():
         for idx in tqdm(range(len(in_feats))):
-            feats = torch.from_numpy(in_feats[idx]).unsqueeze(0).to(device)
 
-            if config.stream_wise_training and \
-               type(model) is list and \
-               len(model) == len(config.stream_sizes):
+            means = []
+            vars = []
+            if config.stream_wise_training:
                 # stream-wise trained model
-                out = []
+
+                # Straem indices for static+delta features
+                # [0,   180, 183, 184]
+                stream_start_indices = np.hstack(([0], np.cumsum(config.stream_sizes)[:-1]))
+                # [180, 183, 184, 199]
+                stream_end_indices = np.cumsum(config.stream_sizes)
+                
                 for stream_id in range(len(config.stream_sizes)):
-                    out.append(model[stream_id](feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy())
-                out = np.concatenate(out, -1)
+                    mean, var = predict(config, models[stream_id], device, in_feats[idx], scaler,
+                                        stream_start_indices[stream_id], stream_end_indices[stream_id])
+                    means.append(mean)
+                    vars.append(var)
             else:
-                out = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
+                mean, var = predict(config, models[0], device, in_feats[idx], scaler)
+                
+                means.append(mean)
+                vars.append(var)
+                
+            means = np.concatenate(means, -1)
+            vars = np.concatenate(means, -1)
+            print(means.shape)
+            print(vars.shape)
             
-            out = scaler.inverse_transform(out)
-
             # Apply MLPG if necessary
-            print(f"config.has_dynamic_features: {config.has_dynamic_features}")
-            if np.any(config.has_dynamic_features):
-                windows = get_windows(3)
+            if np.any(model_config.has_dynamic_features):
                 out = multi_stream_mlpg(
-                    out, scaler.var_, windows, config.stream_sizes,
-                    config.has_dynamic_features)
+                    means, vars, get_windows(config.num_windows),
+                    config.stream_sizes, config.has_dynamic_features)
+            else:
+                out = means
 
             name = basename(in_feats.collected_files[idx][0])
             out_path = join(out_dir, name)
             np.save(out_path, out, allow_pickle=False)
-            
-
-
-            name = basename(in_feats.collected_files[idx][0])
-            out_path = join(out_dir, name)
-            np.save(out_path, out, allow_pickle=False)
-
-    
-
-
 
 def resume(config, device, checkpoint, stream_id=None):
-    if stream_id is not None and\
-       len(config.stream_sizes) == len(checkpoint):
+    if stream_id is not None:
+        assert len(config.stream_sizes) == len(checkpoint)
         model = hydra.utils.instantiate(config.models[stream_id].netG).to(device)
         cp = torch.load(to_absolute_path(checkpoint[stream_id]),
                         map_location=lambda storage, loc: storage)
@@ -127,9 +121,10 @@ def my_app(config : DictConfig) -> None:
     in_feats = FileSourceDataset(NpyFileSource(in_dir))
 
     models = []
-    if model_config.stream_wise_training and \
-       len(model_config.models) == len(model_config.stream_sizes) and \
-       len(config.model.checkpoint) == len(model_config.stream_sizes):
+    if model_config.stream_wise_training:
+        assert len(model_config.models) == len(model_config.stream_sizes)
+        assert len(config.model.checkpoint) == len(model_config.stream_sizes)
+        
         for stream_id in range(len(model_config.stream_sizes)):
             models.append(resume(model_config, device, config.model.checkpoint, stream_id))
     else:

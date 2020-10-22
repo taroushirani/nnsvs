@@ -147,7 +147,6 @@ def get_stream_weight(stream_weights, stream_sizes):
     w = torch.tensor(stream_sizes).float() / S
     return w
 
-
 def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, stream_id=None):
     criterion = nn.MSELoss(reduction="none")
     
@@ -166,55 +165,50 @@ def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, str
                 # Sort by lengths . This is needed for pytorch's PackedSequence
                 sorted_lengths, indices = torch.sort(lengths, dim=0, descending=True)
                 x, y = x[indices].to(device), y[indices].to(device)
-
-                if config.model.stream_wise_training and stream_id is not None:
-                    y = split_streams(y, config.model.stream_sizes)[stream_id]
-                    
                 optimizer.zero_grad()
 
                 # Run forwaard
-<<<<<<< HEAD
-                if model.prediction_type == "probabilistic":
-                    pi, sigma, mu = model(x, sorted_lengths)
-
-                    # (B, max(T))
-                    mask = make_non_pad_mask(sorted_lengths).to(device)
-                    # Compute loss and apply mask
-                    loss = mdn_loss(pi, sigma, mu, y, reduce=False).masked_select(mask).mean()
-                    
-=======
-                y_hat = model(x, sorted_lengths)
-
-                # Compute loss
-                mask = make_non_pad_mask(sorted_lengths).unsqueeze(-1).to(device)
-
                 if not config.model.stream_wise_training and config.train.stream_wise_loss:
-                    # Strean-wise loss
-                    streams = split_streams(y, config.model.stream_sizes)
-                    streams_hat = split_streams(y_hat, config.model.stream_sizes)
-                    loss = 0
-                    for s_hat, s, sw in zip(streams_hat, streams, stream_weights):
-                        s_hat_mask = s_hat.masked_select(mask)
-                        s_mask = s.masked_select(mask)
-                        loss += sw * criterion(s_hat_mask, s_mask).mean()
->>>>>>> swt_dev
-                else:
-                    y_hat = model(x, sorted_lengths)
+                    # strean-wise loss
+                    if model.prediction_type == "probabilistic":
+                        pi, sigma, mu = model(x, sorted_lengths)
+                        mask = make_non_pad_mask(sorted_lengths).to(device)
 
-                    # Compute loss
-                    mask = make_non_pad_mask(sorted_lengths).unsqueeze(-1).to(device)
-
-                    if config.train.stream_wise_loss:
-                        # Strean-wise loss
+                        streams = split_streams(y, config.model.stream_sizes)
+                        sigma_streams = split_streams(sigma, config.model.stream_sizes)
+                        mu_streams = split_streams(mu, config.model.stream_sizes)
+                        loss = 0
+                        for s, sigma_s, mu_s, sw in zip(streams, sigma_streams, mu_streams, stream_weights):
+                            loss += sw * mdn_loss(pi, sigma_s, mu_s, s).masked_select(mask).mean()
+                    else:
+                        y_hat = model(x, sorted_lengths)
+                        # Compute loss
+                        mask = make_non_pad_mask(sorted_lengths).unsqueeze(-1).to(device)
+                        
                         streams = split_streams(y, config.model.stream_sizes)
                         streams_hat = split_streams(y_hat, config.model.stream_sizes)
-                        loss = 0
+                         loss = 0
                         for s_hat, s, sw in zip(streams_hat, streams, stream_weights):
                             s_hat_mask = s_hat.masked_select(mask)
                             s_mask = s.masked_select(mask)
                             loss += sw * criterion(s_hat_mask, s_mask).mean()
-                    else:
-                        # Joint modeling
+                else:
+                    # Stream-wise training or joint modeling
+                    if model.prediction_type == "probabilistic":
+                        if config.model.stream_wise_training:
+                            assert stream_id is not None
+                            y = split_streams(y, config.model.stream_sizes)[stream_id]
+                    
+                        pi, sigma, mu = model(x, sorted_lengths)
+                        # (B, max(T))
+                        mask = make_non_pad_mask(sorted_lengths).to(device)
+                        # Compute loss and apply mask
+                        loss = mdn_loss(pi, sigma, mu, y, reduce=False).masked_select(mask).mean()
+                    else :
+                        y_hat = model(x, sorted_lengths)
+                        # Compute loss
+                        mask = make_non_pad_mask(sorted_lengths).unsqueeze(-1).to(device)
+
                         y_hat = y_hat.masked_select(mask)
                         y = y.masked_select(mask)
                         loss = criterion(y_hat, y).mean()
@@ -296,8 +290,8 @@ def my_app(config : DictConfig) -> None:
     
     data_loaders = get_data_loaders(config)
 
-    if config.model.stream_wise_training and \
-    len(config.model.models) == len(config.model.stream_sizes):
+    if config.model.stream_wise_training:
+        assert len(config.model.models) == len(config.model.stream_sizes)
         logger.info(f"stream-wise training is enabled")
         for stream_id in range(len(config.model.stream_sizes)):
             model, optimizer, lr_scheduler = setup(config, device, stream_id)
