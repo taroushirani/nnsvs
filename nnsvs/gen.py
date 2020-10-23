@@ -279,11 +279,9 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
                 
     means = np.concatenate(means, -1)
     vars = np.concatenate(means, -1)
-    print(means.shape)
-    print(vars.shape)
+
     # Apply denormalization
     # (B, T, D_out) -> (T, D_out)
-   
     means = scaler.inverse_transform(means)
     vars = vars * scaler.var_
             

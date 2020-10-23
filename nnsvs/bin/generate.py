@@ -33,26 +33,30 @@ def generate(config, models, device, in_feats, scaler, out_dir):
                 # stream-wise trained model
                 for stream_id in range(len(config.stream_sizes)):
                     mean, var = predict(config, models[stream_id], device, in_feats[idx], scaler)
+                    print(f"mean.shape: {mean.shape}")
+                    print(f"var.shape: {var.shape}")
                     means.append(mean)
                     vars.append(var)
             else:
                 mean, var = predict(config, models[0], device, in_feats[idx], scaler)
+                print(f"mean.shape: {mean.shape}")
+                print(f"var.shape: {var.shape}")
                 means.append(mean)
                 vars.append(var)
 
             means = np.concatenate(means, -1)
             vars = np.concatenate(means, -1)
 
-            print(means.shape)
-            print(vars.shape)
+            print(f"means.shape: {means.shape}")
+            print(f"vars.shape: {vars.shape}")
 
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
             means = scaler.inverse_transform(means)
             vars = vars * scaler.var_
             
-            print(means.shape)
-            print(vars.shape)
+            print(f"means.shape: {means.shape}")
+            print(f"vars.shape: {vars.shape}")
             
             # Apply MLPG if necessary
             if np.any(config.has_dynamic_features):
