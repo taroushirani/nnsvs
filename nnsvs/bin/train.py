@@ -240,8 +240,6 @@ def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, str
     return model
 
 def setup(config, device, stream_id=None):
-
-    print(stream_id)
     if stream_id is not None:
         model = hydra.utils.instantiate(config.model.models[stream_id].netG).to(device)
     else:
