@@ -115,11 +115,11 @@ def my_app(config : DictConfig) -> None:
 
     # duration
     duration_config = OmegaConf.load(to_absolute_path(config.duration.model_yaml))
+    duration_models = []
     if duration_config.stream_wise_training:
         assert len(duration_config.models) == len(duration_config.stream_sizes)
         assert len(config.duration.checkpoint) == len(duration_config.stream_sizes)
 
-        duration_models = []
         for stream_id in range(len(duration_config.stream_sizes)):
             model = resume(duration_config, device, config.duration.checkpoint, stream_id)
             duration_models.append(model.eval())
@@ -132,16 +132,16 @@ def my_app(config : DictConfig) -> None:
         
     # acoustic model
     acoustic_config = OmegaConf.load(to_absolute_path(config.acoustic.model_yaml))
-    if acoustic_config.stream_wise_training and \
-       len(acoustic_config.models) == len(acoustic_config.stream_sizes) and \
-       len(config.acoustic.checkpoint) == len(acoustic_config.stream_sizes):
-        acoustic_model = []
+    acoustic_models = []
+    if acoustic_config.stream_wise_training:
+       assert len(acoustic_config.models) == len(acoustic_config.stream_sizes)
+       assert len(config.acoustic.checkpoint) == len(acoustic_config.stream_sizes)
         for stream_id in range(len(acoustic_config.stream_sizes)):
             model = resume(acoustic_config, device, config.acoustic.checkpoint, stream_id)
-            acoustic_model.append(model.eval())
+            acoustic_models.append(model.eval())
     else:
-        acoustic_model = resume(acoustic_config, device, config.acoustic.checkpoint, None)
-        acoustic_model.eval()
+        acoustic_models = resume(acoustic_config, device, config.acoustic.checkpoint, None)
+        acoustic_models.eval()
         
     acoustic_in_scaler = joblib.load(to_absolute_path(config.acoustic.in_scaler_path))
     acoustic_out_scaler = joblib.load(to_absolute_path(config.acoustic.out_scaler_path))
@@ -163,9 +163,9 @@ def my_app(config : DictConfig) -> None:
                     raise RuntimeError(f"Label file does not exist: {label_path}")
 
                 wav = synthesis(config, device, label_path, question_path,
-                                timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
-                                duration_model, duration_config, duration_in_scaler, duration_out_scaler,
-                                acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler)
+                                timelag_models, timelag_config, timelag_in_scaler, timelag_out_scaler,
+                                duration_models, duration_config, duration_in_scaler, duration_out_scaler,
+                                acoustic_models, acoustic_config, acoustic_in_scaler, acoustic_out_scaler)
                 wav = wav / np.max(np.abs(wav)) * (2**15 - 1)
 
                 out_wav_path = join(out_dir, f"{utt_id}.wav")
@@ -177,9 +177,9 @@ def my_app(config : DictConfig) -> None:
         out_wav_path = to_absolute_path(config.out_wav_path)
 
         wav = synthesis(config, device, label_path, question_path,
-            timelag_model, timelag_in_scaler, timelag_out_scaler,
-            duration_model, duration_in_scaler, duration_out_scaler,
-            acoustic_model, acoustic_in_scaler, acoustic_out_scaler)
+                        timelag_models, timelag_config, timelag_in_scaler, timelag_out_scaler,
+                        duration_models, duration_config, duration_in_scaler, duration_out_scaler,
+                        acoustic_models, acoustic_config, acoustic_in_scaler, acoustic_out_scaler)
         wav = wav / np.max(np.abs(wav)) * (2**15 - 1)
         wavfile.write(out_wav_path, rate=config.sample_rate, data=wav.astype(np.int16))
 
