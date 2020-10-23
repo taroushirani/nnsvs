@@ -168,12 +168,15 @@ def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, str
                 optimizer.zero_grad()
 
                 # Run forwaard
-                if not config.model.stream_wise_training and config.train.stream_wise_loss:
+                if config.train.stream_wise_loss:
                     # strean-wise loss
+                    if config.model.stream_wise_training == True:
+                        raise RuntimeError("stream_wise_training and stream_wise_loss can't be enabled at the same time.")
+                        
                     if model.prediction_type == "probabilistic":
                         pi, sigma, mu = model(x, sorted_lengths)
                         mask = make_non_pad_mask(sorted_lengths).to(device)
-
+                        
                         streams = split_streams(y, config.model.stream_sizes)
                         sigma_streams = split_streams(sigma, config.model.stream_sizes)
                         mu_streams = split_streams(mu, config.model.stream_sizes)
@@ -194,11 +197,11 @@ def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, str
                             loss += sw * criterion(s_hat_mask, s_mask).mean()
                 else:
                     # Stream-wise training or joint modeling
-                    if model.prediction_type == "probabilistic":
-                        if config.model.stream_wise_training:
-                            assert stream_id is not None
-                            y = split_streams(y, config.model.stream_sizes)[stream_id]
+                    if config.model.stream_wise_training:
+                        assert stream_id is not None
+                        y = split_streams(y, config.model.stream_sizes)[stream_id]
                     
+                    if model.prediction_type == "probabilistic":
                         pi, sigma, mu = model(x, sorted_lengths)
                         # (B, max(T))
                         mask = make_non_pad_mask(sorted_lengths).to(device)
