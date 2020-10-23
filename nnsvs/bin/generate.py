@@ -36,7 +36,7 @@ def generate(config, models, device, in_feats, scaler, out_dir):
                     means.append(mean)
                     vars.append(var)
             else:
-                mean, var = predict(config, models[0], device, in_feats[idx], scaler)
+                mean, var = predict(config, models[0], device, in_feats[idx])
                 means.append(mean)
                 vars.append(var)
 

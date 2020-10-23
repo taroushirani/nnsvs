@@ -46,7 +46,7 @@ def _is_silence(l):
         is_silence = (l == "sil" or l == "pau")
     return is_silence
 
-def predict(config, model, device, in_feats, scaler):
+def predict(config, model, device, in_feats):
     # (T, D_out) -> (1, T, D_out)
     feats = torch.from_numpy(in_feats).unsqueeze(0).to(device)
     
@@ -103,11 +103,11 @@ def predict_timelag(device, labels, timelag_models, timelag_config, timelag_in_s
     if timelag_config.stream_wise_training:
         # stream-wise trained model
         for stream_id in range(len(timelag_config.stream_sizes)):
-            mean, var = predict(timelag_config, timelag_models[stream_id], device, timelag_linguistic_features, timelag_out_scaler)
+            mean, var = predict(timelag_config, timelag_models[stream_id], device, timelag_linguistic_features)
             means.append(mean)
             vars.append(var)
     else:
-        mean, var = predict(timelag_config, timelag_models[0], device, timelag_linguistic_features, timelag_out_scaler)
+        mean, var = predict(timelag_config, timelag_models[0], device, timelag_linguistic_features)
                 
         means.append(mean)
         vars.append(var)
@@ -117,8 +117,8 @@ def predict_timelag(device, labels, timelag_models, timelag_config, timelag_in_s
 
     # Apply denormalization
     # (B, T, D_out) -> (T, D_out)
-    means = scaler.inverse_transform(means)
-    vars = vars * scaler.var_
+    means = timelag_out_scaler.inverse_transform(means)
+    vars = vars * timelag_out_scaler.var_
             
     # Apply MLPG if necessary
     if np.any(timelag_config.has_dynamic_features):
@@ -208,11 +208,11 @@ def predict_duration(device, labels, duration_models, duration_config, duration_
     if duration_config.stream_wise_training:
         # stream-wise trained model
         for stream_id in range(len(duration_config.stream_sizes)):
-            mean, var = predict(duration_config, duration_models[stream_id], device, duration_linguistic_features, duration_out_scaler)
+            mean, var = predict(duration_config, duration_models[stream_id], device, duration_linguistic_features)
             means.append(mean)
             vars.append(var)
     else:
-        mean, var = predict(duration_config, duration_models[0], device, duration_linguistic_features, duration_out_scaler)
+        mean, var = predict(duration_config, duration_models[0], device, duration_linguistic_features)
                 
         means.append(mean)
         vars.append(var)
@@ -222,8 +222,8 @@ def predict_duration(device, labels, duration_models, duration_config, duration_
 
     # Apply denormalization
     # (B, T, D_out) -> (T, D_out)
-    means = scaler.inverse_transform(means)
-    vars = vars * scaler.var_
+    means = duration_out_scaler.inverse_transform(means)
+    vars = vars * duration_out_scaler.var_
             
     # Apply MLPG if necessary
     if np.any(duration_config.has_dynamic_features):
@@ -268,11 +268,11 @@ def predict_acoustic(device, labels, acoustic_models, acoustic_config, acoustic_
     if acoustic_config.stream_wise_training:
         # stream-wise trained model
         for stream_id in range(len(acoustic_config.stream_sizes)):
-            mean, var = predict(acoustic_config, acoustic_models[stream_id], device, acoustic_linguistic_features, acoustic_out_scaler)
+            mean, var = predict(acoustic_config, acoustic_models[stream_id], device, acoustic_linguistic_features)
             means.append(mean)
             vars.append(var)
     else:
-        mean, var = predict(acoustic_config, acoustic_models[0], device, acoustic_linguistic_features, acoustic_out_scaler)
+        mean, var = predict(acoustic_config, acoustic_models[0], device, acoustic_linguistic_features)
                 
         means.append(mean)
         vars.append(var)
@@ -282,8 +282,8 @@ def predict_acoustic(device, labels, acoustic_models, acoustic_config, acoustic_
 
     # Apply denormalization
     # (B, T, D_out) -> (T, D_out)
-    means = scaler.inverse_transform(means)
-    vars = vars * scaler.var_
+    means = acoustic_out_scaler.inverse_transform(means)
+    vars = vars * acoustic_out_scaler.var_
             
     # Apply MLPG if necessary
     if np.any(acoustic_config.has_dynamic_features):
