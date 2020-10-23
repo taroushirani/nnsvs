@@ -125,7 +125,7 @@ def my_app(config : DictConfig) -> None:
             duration_models.append(model.eval())
     else:
         model = resume(duration_config, device, config.duration.checkpoint, None)
-        duration_models.append(duration_models.eval())
+        duration_models.append(model.eval())
 
     duration_in_scaler = joblib.load(to_absolute_path(config.duration.in_scaler_path))
     duration_out_scaler = joblib.load(to_absolute_path(config.duration.out_scaler_path))
@@ -140,8 +140,8 @@ def my_app(config : DictConfig) -> None:
             model = resume(acoustic_config, device, config.acoustic.checkpoint, stream_id)
             acoustic_models.append(model.eval())
     else:
-        acoustic_models = resume(acoustic_config, device, config.acoustic.checkpoint, None)
-        acoustic_models.eval()
+        model = resume(acoustic_config, device, config.acoustic.checkpoint, None)
+        acoustic_models.append(model.eval())
         
     acoustic_in_scaler = joblib.load(to_absolute_path(config.acoustic.in_scaler_path))
     acoustic_out_scaler = joblib.load(to_absolute_path(config.acoustic.out_scaler_path))
