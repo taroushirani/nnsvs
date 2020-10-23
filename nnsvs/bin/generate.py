@@ -55,7 +55,7 @@ def generate(config, models, device, in_feats, scaler, out_dir):
             print(vars.shape)
             
             # Apply MLPG if necessary
-            if np.any(model_config.has_dynamic_features):
+            if np.any(config.has_dynamic_features):
                 out = multi_stream_mlpg(
                     means, vars, get_windows(config.num_windows),
                     config.stream_sizes, config.has_dynamic_features)
