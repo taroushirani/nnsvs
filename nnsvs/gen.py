@@ -101,16 +101,8 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
     vars = []
     if timelag_config.stream_wise_training:
         # stream-wise trained model
-
-        # Straem indices for static+delta features
-        # [0,   180, 183, 184]
-        stream_start_indices = np.hstack(([0], np.cumsum(timelag_config.stream_sizes)[:-1]))
-        # [180, 183, 184, 199]
-        stream_end_indices = np.cumsum(timelag_config.stream_sizes)
-                
         for stream_id in range(len(timelag_config.stream_sizes)):
-            mean, var = predict(timelag_config, models[stream_id], device, timelag_linguistic_features, timelag_out_scaler,
-                                stream_start_indices[stream_id], stream_end_indices[stream_id])
+            mean, var = predict(timelag_config, models[stream_id], device, timelag_linguistic_features, timelag_out_scaler)
             means.append(mean)
             vars.append(var)
     else:
@@ -214,15 +206,8 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
     vars = []
     if duration_config.stream_wise_training:
         # stream-wise trained model
-        # Straem indices for static+delta features
-        # [0,   180, 183, 184]
-        stream_start_indices = np.hstack(([0], np.cumsum(duration_config.stream_sizes)[:-1]))
-        # [180, 183, 184, 199]
-        stream_end_indices = np.cumsum(duration_config.stream_sizes)
-                
         for stream_id in range(len(duration_config.stream_sizes)):
-            mean, var = predict(duration_config, models[stream_id], device, duration_linguistic_features, duration_out_scaler,
-                                stream_start_indices[stream_id], stream_end_indices[stream_id])
+            mean, var = predict(duration_config, models[stream_id], device, duration_linguistic_features, duration_out_scaler)
             means.append(mean)
             vars.append(var)
     else:
@@ -281,16 +266,8 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
     vars = []
     if acoustic_config.stream_wise_training:
         # stream-wise trained model
-
-        # Straem indices for static+delta features
-        # [0,   180, 183, 184]
-        stream_start_indices = np.hstack(([0], np.cumsum(acoustic_config.stream_sizes)[:-1]))
-        # [180, 183, 184, 199]
-        stream_end_indices = np.cumsum(acoustic_config.stream_sizes)
-                
         for stream_id in range(len(acoustic_config.stream_sizes)):
-            mean, var = predict(acoustic_config, models[stream_id], device, acoustic_linguistic_features, acoustic_out_scaler,
-                                stream_start_indices[stream_id], stream_end_indices[stream_id])
+            mean, var = predict(acoustic_config, models[stream_id], device, acoustic_linguistic_features, acoustic_out_scaler)
             means.append(mean)
             vars.append(var)
     else:
