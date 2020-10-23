@@ -187,7 +187,7 @@ def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders, str
                         
                         streams = split_streams(y, config.model.stream_sizes)
                         streams_hat = split_streams(y_hat, config.model.stream_sizes)
-                         loss = 0
+                        loss = 0
                         for s_hat, s, sw in zip(streams_hat, streams, stream_weights):
                             s_hat_mask = s_hat.masked_select(mask)
                             s_mask = s.masked_select(mask)
