@@ -47,6 +47,9 @@ def _is_silence(l):
     return is_silence
 
 def predict(config, model, device, in_feats, scaler, start_idx=0, end_idx=None):
+    T, D = in_feats.shape
+
+    # (T, D_out) -> (1, T, D_out)
     feats = torch.from_numpy(in_feats).unsqueeze(0).to(device)
     if model.prediction_type == "probabilistic":
         pi, sigma, mu = model(feats, [feats.shape[1]])
@@ -54,19 +57,17 @@ def predict(config, model, device, in_feats, scaler, start_idx=0, end_idx=None):
                    
         # Apply denormalization
         # (B, T, end_indx-start_idx) -> (T, end_indx-start_idx)
-        var = max_sigma.squeeze(0).cpu().data.numpy() * scaler.var_[start_idx:end_idx]
         mean = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
-
+        var = max_sigma.squeeze(0).cpu().data.numpy() * scaler.var_[start_idx:end_idx]
     else:
         mean = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
 
         # Apply denormalization
         # (B, T, D_out) -> (T, D_out)
         mean = scaler.inverse_transform(out)
-        var = scaler.var_[start_idx:end_idx]
+        var = np.tile(scaler.var_[start_idx:end_idx], (T, 1))
 
     return mean, var
-
 
 def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
         binary_dict, continuous_dict,

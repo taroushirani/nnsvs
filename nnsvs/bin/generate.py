@@ -13,7 +13,7 @@ from torch import nn
 from torch.nn import functional as F
 from nnmnkwii.datasets import FileSourceDataset
 
-from nnsvs.gen import get_windows
+from nnsvs.gen import get_windows, predict
 from nnsvs.multistream import multi_stream_mlpg
 from nnsvs.bin.train import NpyFileSource
 from nnsvs.logger import getLogger
@@ -23,30 +23,7 @@ logger = None
 
 use_cuda = torch.cuda.is_available()
 
-
-def predict(config, model, device, in_feats, scaler, start_idx=0, end_idx=None):
-    feats = torch.from_numpy(in_feats).unsqueeze(0).to(device)
-    if model.prediction_type == "probabilistic":
-        pi, sigma, mu = model(feats, [feats.shape[1]])
-        max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(pi, sigma, mu)
-                   
-        # Apply denormalization
-        # (B, T, D_out) -> (T, D_out)
-        var = max_sigma.squeeze(0).cpu().data.numpy() * scaler.var_[start_idx:end_idx]
-        mean = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
-
-    else:
-        mean = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
-
-        # Apply denormalization
-        mean = scaler.inverse_transform(out)
-        var = scaler.var_[start_idx:end_idx]
-
-    return mean, var
-r
 def generate(config, models, device, in_feats, scaler, out_dir):
-
-
     with torch.no_grad():
         for idx in tqdm(range(len(in_feats))):
 
