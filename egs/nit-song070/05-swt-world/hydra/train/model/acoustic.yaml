@@ -18,12 +18,14 @@ models:
       dropout: 0.1
   # f0
   - netG:
-      _target_: nnsvs.model.LSTMRNN
+      _target_: nnsvs.model.RMDN
       in_dim: 424
       out_dim: 3
-      hidden_dim: 64
+      hidden_dim: 256
       num_layers: 2
       dropout: 0.1
+      bidirectional: true
+      num_gaussians: 2
   # vuv
   - netG:
       _target_: nnsvs.model.Conv1dResnet
