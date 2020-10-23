@@ -45,7 +45,7 @@ def generate(config, models, device, in_feats, scaler, out_dir):
                 vars.append(var)
 
             means = np.concatenate(means, -1)
-            vars = np.concatenate(means, -1)
+            vars = np.concatenate(vars, -1)
 
             print(f"means.shape: {means.shape}")
             print(f"vars.shape: {vars.shape}")

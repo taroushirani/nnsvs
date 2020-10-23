@@ -113,7 +113,7 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
         vars.append(var)
                 
     means = np.concatenate(means, -1)
-    vars = np.concatenate(means, -1)
+    vars = np.concatenate(vars, -1)
 
     # Apply denormalization
     # (B, T, D_out) -> (T, D_out)
@@ -218,7 +218,7 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
         vars.append(var)
                 
     means = np.concatenate(means, -1)
-    vars = np.concatenate(means, -1)
+    vars = np.concatenate(vars, -1)
 
     # Apply denormalization
     # (B, T, D_out) -> (T, D_out)
@@ -278,7 +278,7 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
         vars.append(var)
                 
     means = np.concatenate(means, -1)
-    vars = np.concatenate(means, -1)
+    vars = np.concatenate(vars, -1)
 
     # Apply denormalization
     # (B, T, D_out) -> (T, D_out)
