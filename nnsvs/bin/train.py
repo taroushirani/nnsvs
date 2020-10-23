@@ -243,6 +243,7 @@ def setup(config, device, stream_id=None):
     if stream_id is not None:
         model = hydra.utils.instantiate(config.model.models[stream_id].netG).to(device)
     else:
+        # for backward compatibility
         model = hydra.utils.instantiate(config.model.netG).to(device)
         
     # Optimizer
