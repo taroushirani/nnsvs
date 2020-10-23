@@ -243,25 +243,25 @@ def predict_acoustic(device, labels, acoustic_models, acoustic_config, acoustic_
                      subphone_features="coarse_coding",
                      pitch_indices=None, log_f0_conditioning=True):
     # Musical/linguistic features
-    linguistic_features = fe.linguistic_features(labels,
-                                                  binary_dict, continuous_dict,
-                                                  add_frame_features=True,
-                                                  subphone_features=subphone_features)
-
+    acoustic_linguistic_features = fe.linguistic_features(labels,
+                                                          binary_dict, continuous_dict,
+                                                          add_frame_features=True,
+                                                          subphone_features=subphone_features)
+    
     if log_f0_conditioning:
         for idx in pitch_indices:
-            linguistic_features[:, idx] = interp1d(
-                _midi_to_hz(linguistic_features, idx, log_f0_conditioning),
-                    kind="slinear")
-
+            acoustic_linguistic_features[:, idx] = interp1d(
+            _midi_to_hz(acoustic_linguistic_features, idx, log_f0_conditioning),
+                kind="slinear")
+            
     # Apply normalization
-    linguistic_features = acoustic_in_scaler.transform(linguistic_features)
+    acoustic_linguistic_features = acoustic_in_scaler.transform(acoustic_linguistic_features)
     if isinstance(acoustic_in_scaler, MinMaxScaler):
         # clip to feature range
-        linguistic_features = np.clip(
-            linguistic_features, acoustic_in_scaler.feature_range[0],
+        acoustic_linguistic_features = np.clip(
+            acoustic_linguistic_features, acoustic_in_scaler.feature_range[0],
             acoustic_in_scaler.feature_range[1])
-
+        
     # Run model
     means = []
     vars = []
