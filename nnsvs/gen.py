@@ -246,7 +246,7 @@ def predict_acoustic(device, labels, acoustic_models, acoustic_config, acoustic_
     acoustic_linguistic_features = fe.linguistic_features(labels,
                                                           binary_dict, continuous_dict,
                                                           add_frame_features=True,
-                                                          subphone_features=subphone_features)
+                                                          subphone_features=subphone_features).astype(np.float32)
     
     if log_f0_conditioning:
         for idx in pitch_indices:
