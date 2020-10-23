@@ -31,21 +31,12 @@ def generate(config, models, device, in_feats, scaler, out_dir):
             vars = []
             if config.stream_wise_training:
                 # stream-wise trained model
-
-                # Straem indices for static+delta features
-                # [0,   180, 183, 184]
-                stream_start_indices = np.hstack(([0], np.cumsum(config.stream_sizes)[:-1]))
-                # [180, 183, 184, 199]
-                stream_end_indices = np.cumsum(config.stream_sizes)
-                
                 for stream_id in range(len(config.stream_sizes)):
-                    mean, var = predict(config, models[stream_id], device, in_feats[idx], scaler,
-                                        stream_start_indices[stream_id], stream_end_indices[stream_id])
+                    mean, var = predict(config, models[stream_id], device, in_feats[idx], scaler)
                     means.append(mean)
                     vars.append(var)
             else:
                 mean, var = predict(config, models[0], device, in_feats[idx], scaler)
-                
                 means.append(mean)
                 vars.append(var)
 
@@ -114,6 +105,7 @@ def my_app(config : DictConfig) -> None:
         for stream_id in range(len(model_config.stream_sizes)):
             models.append(resume(model_config, device, config.model.checkpoint, stream_id))
     else:
+        # for backward compatibility
         models.append(resume(model_config, device, config.model.checkpoint, None))
         
     generate(model_config, models, device, in_feats, scaler, out_dir)
