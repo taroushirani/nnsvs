@@ -136,7 +136,7 @@ def my_app(config : DictConfig) -> None:
     if acoustic_config.stream_wise_training:
        assert len(acoustic_config.models) == len(acoustic_config.stream_sizes)
        assert len(config.acoustic.checkpoint) == len(acoustic_config.stream_sizes)
-        for stream_id in range(len(acoustic_config.stream_sizes)):
+       for stream_id in range(len(acoustic_config.stream_sizes)):
             model = resume(acoustic_config, device, config.acoustic.checkpoint, stream_id)
             acoustic_models.append(model.eval())
     else:
