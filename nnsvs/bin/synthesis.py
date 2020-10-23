@@ -125,7 +125,7 @@ def my_app(config : DictConfig) -> None:
             duration_models.append(model.eval())
     else:
         model = resume(duration_config, device, config.duration.checkpoint, None)
-        duration_models.append(duration_model.eval())
+        duration_models.append(duration_models.eval())
 
     duration_in_scaler = joblib.load(to_absolute_path(config.duration.in_scaler_path))
     duration_out_scaler = joblib.load(to_absolute_path(config.duration.out_scaler_path))
