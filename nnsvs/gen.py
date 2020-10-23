@@ -246,7 +246,7 @@ def predict_acoustic(device, labels, acoustic_models, acoustic_config, acoustic_
     acoustic_linguistic_features = fe.linguistic_features(labels,
                                                           binary_dict, continuous_dict,
                                                           add_frame_features=True,
-                                                          subphone_features=subphone_features).astype(np.float32)
+                                                          subphone_features=subphone_features)
     
     if log_f0_conditioning:
         for idx in pitch_indices:
@@ -268,11 +268,11 @@ def predict_acoustic(device, labels, acoustic_models, acoustic_config, acoustic_
     if acoustic_config.stream_wise_training:
         # stream-wise trained model
         for stream_id in range(len(acoustic_config.stream_sizes)):
-            mean, var = predict(acoustic_config, acoustic_models[stream_id], device, acoustic_linguistic_features)
+            mean, var = predict(acoustic_config, acoustic_models[stream_id], device, acoustic_linguistic_features.astype(np.float32))
             means.append(mean)
             vars.append(var)
     else:
-        mean, var = predict(acoustic_config, acoustic_models[0], device, acoustic_linguistic_features)
+        mean, var = predict(acoustic_config, acoustic_models[0], device, acoustic_linguistic_features.astype(np.float32))
                 
         means.append(mean)
         vars.append(var)
