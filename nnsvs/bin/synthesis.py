@@ -60,7 +60,7 @@ def synthesis(config, device, label_path, question_path,
 
     # Waveform generation
     generated_waveform = gen_waveform(
-        duration_modified_labels, acoustic_features, acoustic_out_scaler,
+        duration_modified_labels, acoustic_features,
         binary_dict, continuous_dict, acoustic_config.stream_sizes,
         acoustic_config.has_dynamic_features,
         config.acoustic.subphone_features, log_f0_conditioning,
