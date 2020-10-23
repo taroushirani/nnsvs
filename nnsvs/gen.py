@@ -64,7 +64,7 @@ def predict(config, model, device, in_feats, scaler):
 
     return mean, var
 
-def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
+def predict_timelag(device, labels, timelag_models, timelag_config, timelag_in_scaler, timelag_out_scaler,
         binary_dict, continuous_dict,
         pitch_indices=None, log_f0_conditioning=True,
         allowed_range=[-20, 20], allowed_range_rest=[-40, 40]):
@@ -103,11 +103,11 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
     if timelag_config.stream_wise_training:
         # stream-wise trained model
         for stream_id in range(len(timelag_config.stream_sizes)):
-            mean, var = predict(timelag_config, models[stream_id], device, timelag_linguistic_features, timelag_out_scaler)
+            mean, var = predict(timelag_config, timelag_models[stream_id], device, timelag_linguistic_features, timelag_out_scaler)
             means.append(mean)
             vars.append(var)
     else:
-        mean, var = predict(timelag_config, models[0], device, timelag_linguistic_features, timelag_out_scaler)
+        mean, var = predict(timelag_config, timelag_models[0], device, timelag_linguistic_features, timelag_out_scaler)
                 
         means.append(mean)
         vars.append(var)
@@ -181,7 +181,7 @@ def postprocess_duration(labels, pred_durations, lag):
     return output_labels
 
 
-def predict_duration(device, labels, duration_model, duration_config, duration_in_scaler, duration_out_scaler,
+def predict_duration(device, labels, duration_models, duration_config, duration_in_scaler, duration_out_scaler,
         lag, binary_dict, continuous_dict, pitch_indices=None, log_f0_conditioning=True):
     # Extract musical/linguistic features
     duration_linguistic_features = fe.linguistic_features(
@@ -208,11 +208,11 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
     if duration_config.stream_wise_training:
         # stream-wise trained model
         for stream_id in range(len(duration_config.stream_sizes)):
-            mean, var = predict(duration_config, models[stream_id], device, duration_linguistic_features, duration_out_scaler)
+            mean, var = predict(duration_config, duration_models[stream_id], device, duration_linguistic_features, duration_out_scaler)
             means.append(mean)
             vars.append(var)
     else:
-        mean, var = predict(duration_config, models[0], device, duration_linguistic_features, duration_out_scaler)
+        mean, var = predict(duration_config, duration_models[0], device, duration_linguistic_features, duration_out_scaler)
                 
         means.append(mean)
         vars.append(var)
@@ -238,7 +238,7 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
 
     return pred_durations
 
-def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_in_scaler,
+def predict_acoustic(device, labels, acoustic_models, acoustic_config, acoustic_in_scaler,
                      acoustic_out_scaler, binary_dict, continuous_dict,
                      subphone_features="coarse_coding",
                      pitch_indices=None, log_f0_conditioning=True):
@@ -268,11 +268,11 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
     if acoustic_config.stream_wise_training:
         # stream-wise trained model
         for stream_id in range(len(acoustic_config.stream_sizes)):
-            mean, var = predict(acoustic_config, models[stream_id], device, acoustic_linguistic_features, acoustic_out_scaler)
+            mean, var = predict(acoustic_config, acoustic_models[stream_id], device, acoustic_linguistic_features, acoustic_out_scaler)
             means.append(mean)
             vars.append(var)
     else:
-        mean, var = predict(acoustic_config, models[0], device, acoustic_linguistic_features, acoustic_out_scaler)
+        mean, var = predict(acoustic_config, acoustic_models[0], device, acoustic_linguistic_features, acoustic_out_scaler)
                 
         means.append(mean)
         vars.append(var)

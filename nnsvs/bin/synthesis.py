@@ -20,9 +20,9 @@ logger = None
 
 
 def synthesis(config, device, label_path, question_path,
-              timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
-              duration_model, duration_config, duration_in_scaler, duration_out_scaler,
-              acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler):
+              timelag_models, timelag_config, timelag_in_scaler, timelag_out_scaler,
+              duration_models, duration_config, duration_in_scaler, duration_out_scaler,
+              acoustic_models, acoustic_config, acoustic_in_scaler, acoustic_out_scaler):
     # load labels and question
     labels = hts.load(label_path).round_()
     binary_dict, continuous_dict = hts.load_question_set(
@@ -40,13 +40,13 @@ def synthesis(config, device, label_path, question_path,
         duration_modified_labels = labels
     else:
         # Time-lag
-        lag = predict_timelag(device, labels, timelag_model, timelag_config,
+        lag = predict_timelag(device, labels, timelag_models, timelag_config,
                               timelag_in_scaler, timelag_out_scaler, binary_dict,
                               continuous_dict, pitch_indices, log_f0_conditioning,
                               config.timelag.allowed_range)
 
         # Timelag predictions
-        durations = predict_duration(device, labels, duration_model, duration_config,
+        durations = predict_duration(device, labels, duration_models, duration_config,
                                      duration_in_scaler, duration_out_scaler, lag, binary_dict,
                                      continuous_dict, pitch_indices, log_f0_conditioning)
 
@@ -54,7 +54,7 @@ def synthesis(config, device, label_path, question_path,
         duration_modified_labels = postprocess_duration(labels, durations, lag)
 
     # Predict acoustic features
-    acoustic_features = predict_acoustic(device, duration_modified_labels, acoustic_model, acoustic_config, 
+    acoustic_features = predict_acoustic(device, duration_modified_labels, acoustic_models, acoustic_config, 
                                          acoustic_in_scaler, acoustic_out_scaler, binary_dict, continuous_dict,
                                          config.acoustic.subphone_features, pitch_indices, log_f0_conditioning)
 
