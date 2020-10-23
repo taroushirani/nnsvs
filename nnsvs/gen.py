@@ -46,26 +46,20 @@ def _is_silence(l):
         is_silence = (l == "sil" or l == "pau")
     return is_silence
 
-def predict(config, model, device, in_feats, scaler, start_idx=0, end_idx=None):
-    T, D = in_feats.shape
-
+def predict(config, model, device, in_feats, scaler):
     # (T, D_out) -> (1, T, D_out)
     feats = torch.from_numpy(in_feats).unsqueeze(0).to(device)
+    
     if model.prediction_type == "probabilistic":
         pi, sigma, mu = model(feats, [feats.shape[1]])
         max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(pi, sigma, mu)
                    
-        # Apply denormalization
-        # (B, T, end_indx-start_idx) -> (T, end_indx-start_idx)
-        mean = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
-        var = max_sigma.squeeze(0).cpu().data.numpy() * scaler.var_[start_idx:end_idx]
+        mean = max_mu.squeeze(0).cpu().data.numpy()
+        var = max_sigma.squeeze(0).cpu().data.numpy()
+        
     else:
         mean = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
-
-        # Apply denormalization
-        # (B, T, D_out) -> (T, D_out)
-        mean = scaler.inverse_transform(mean)
-        var = np.tile(scaler.var_[start_idx:end_idx], (T, 1))
+        var = np.ones(mean.shape)
 
     return mean, var
 
@@ -127,8 +121,11 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
                 
     means = np.concatenate(means, -1)
     vars = np.concatenate(means, -1)
-    print(means.shape)
-    print(vars.shape)
+
+    # Apply denormalization
+    # (B, T, D_out) -> (T, D_out)
+    means = scaler.inverse_transform(means)
+    vars = vars * scaler.var_
             
     # Apply MLPG if necessary
     if np.any(timelag_config.has_dynamic_features):
@@ -236,8 +233,11 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
                 
     means = np.concatenate(means, -1)
     vars = np.concatenate(means, -1)
-    print(means.shape)
-    print(vars.shape)
+
+    # Apply denormalization
+    # (B, T, D_out) -> (T, D_out)
+    means = scaler.inverse_transform(means)
+    vars = vars * scaler.var_
             
     # Apply MLPG if necessary
     if np.any(duration_config.has_dynamic_features):
@@ -303,6 +303,11 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
     vars = np.concatenate(means, -1)
     print(means.shape)
     print(vars.shape)
+    # Apply denormalization
+    # (B, T, D_out) -> (T, D_out)
+   
+    means = scaler.inverse_transform(means)
+    vars = vars * scaler.var_
             
     # Apply MLPG if necessary
     if np.any(acoustic_config.has_dynamic_features):

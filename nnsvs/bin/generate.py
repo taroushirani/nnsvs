@@ -48,9 +48,21 @@ def generate(config, models, device, in_feats, scaler, out_dir):
                 
                 means.append(mean)
                 vars.append(var)
+
+            print(means.shape)
+            print(vars.shape)
                 
             means = np.concatenate(means, -1)
             vars = np.concatenate(means, -1)
+
+            print(means.shape)
+            print(vars.shape)
+
+            # Apply denormalization
+            # (B, T, D_out) -> (T, D_out)
+            means = scaler.inverse_transform(means)
+            vars = vars * scaler.var_
+            
             print(means.shape)
             print(vars.shape)
             
