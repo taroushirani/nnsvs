@@ -64,7 +64,7 @@ def predict(config, model, device, in_feats, scaler, start_idx=0, end_idx=None):
 
         # Apply denormalization
         # (B, T, D_out) -> (T, D_out)
-        mean = scaler.inverse_transform(out)
+        mean = scaler.inverse_transform(mean)
         var = np.tile(scaler.var_[start_idx:end_idx], (T, 1))
 
     return mean, var
