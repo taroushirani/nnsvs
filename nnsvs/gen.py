@@ -59,6 +59,7 @@ def predict(config, model, device, in_feats, scaler):
         
     else:
         mean = model(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
+        # This will be denormalized by multiplying scaler.var_.
         var = np.ones(mean.shape)
 
     return mean, var
