@@ -212,3 +212,58 @@ class MDN(BaseModel):
 
     def forward(self, x, lengths=None):
         return self.model(x)
+
+class MDNSAR(MDN):
+    """MDN with shallow AR structure
+
+    Args:
+        stream_sizes (list): Stream sizes
+        ar_orders (list): Filter dimensions for each stream.
+    """
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0,
+                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+        super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout, num_gaussians)
+
+        self.stream_sizes = stream_sizes
+        self.analysis_filts = nn.ModuleList()
+        for s, K in zip(stream_sizes, ar_orders):
+            self.analysis_filts += [TrTimeInvFIRFilter(s, K+1)]
+
+    def preprocess_target(self, y):
+        assert sum(self.stream_sizes) == y.shape[-1]
+        ys = split_streams(y, self.stream_sizes)
+        for idx, yi in enumerate(ys):
+            ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
+        return torch.cat(ys, -1)
+
+    def inference(self, x, lengths=None):
+        log_pi, log_sigma, mu = self.forward(x, lengths)
+        return log_pi, log_sigma, _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts)
+
+class RMDNSAR(RMDN):
+    """MDN with shallow AR structure
+
+    Args:
+        stream_sizes (list): Stream sizes
+        ar_orders (list): Filter dimensions for each stream.
+    """
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, bidirectional=True, dropout=0.0,
+                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+        super().__init__(in_dim, hidden_dim, out_dim, num_layers, bidirectional, dropout, num_gaussians)
+
+        self.stream_sizes = stream_sizes
+        self.analysis_filts = nn.ModuleList()
+        for s, K in zip(stream_sizes, ar_orders):
+            self.analysis_filts += [TrTimeInvFIRFilter(s, K+1)]
+
+    def preprocess_target(self, y):
+        assert sum(self.stream_sizes) == y.shape[-1]
+        ys = split_streams(y, self.stream_sizes)
+        for idx, yi in enumerate(ys):
+            ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
+        return torch.cat(ys, -1)
+
+    def inference(self, x, lengths=None):
+        log_pi, log_sigma, mu = self.forward(x, lengths)
+        return log_pi, log_sigma, _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts)
+    
