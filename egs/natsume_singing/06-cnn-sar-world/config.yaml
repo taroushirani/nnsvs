@@ -29,7 +29,7 @@ exclude_songs: []
 sinsy_dic: "../../_common/no2/dic"
 
 ## HTS-style question used for extracting musical/linguistic context from musicxml files
-question_path: "../../_common/hed/jp_qst001_nnsvs.hed"
+question_path: "../../_common/hed/jp_qst003_nnsvs.hed"
 
 ### Data preparation related settings.
 ## Song segmentation by silence durations.
