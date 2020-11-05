@@ -82,7 +82,10 @@ def _shallow_ar_inference(out, stream_sizes, analysis_filts):
             ai = a[idx].view(-1).flip(0)
             bi = torch.zeros_like(ai)
             bi[0] = 1
-            out_stream_syn[:, idx, :] = lfilter(os[:, idx, :], ai, bi, clamp=False)
+            if out.dims() == 4:
+                out_stream_syn[:, idx, :, :] = lfilter(os[:, idx, :, :], ai, bi, clamp=False)
+            else:
+                out_stream_syn[:, idx, :] = lfilter(os[:, idx, :], ai, bi, clamp=False)
         out_syn += [out_stream_syn]
 
     out_syn = torch.cat(out_syn, 1)
