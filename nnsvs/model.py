@@ -89,7 +89,7 @@ def _shallow_ar_inference(out, stream_sizes, analysis_filts):
     if out.dims() == 4:
         # (B, C, T, num_gaussians) -> (B, T, num_gaussians, C)  
         return out_syn.permute(0, 3, 1, 2)
-            else:
+    else:
         return out_syn.transpose(1, 2)
 
 
