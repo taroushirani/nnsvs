@@ -57,15 +57,24 @@ class Conv1dResnet(BaseModel):
 @torch.no_grad()
 def _shallow_ar_inference(out, stream_sizes, analysis_filts):
     from torchaudio.functional import lfilter
-
+    print(f"out.shape: {out_shape}")
     out_streams = split_streams(out, stream_sizes)
     # back to conv1d friendly (B, C, T) format
-    out_streams = map(lambda x: x.transpose(1, 2), out_streams)
+    if out.dims() == 4:
+        # MDN (B, T, num_gaussians, C) -> (B, C, T, num_gaussians)
+        out_streams = map(lambda x: x.permute(0, 2, 3, 1), out_streams)
+    else:
+        out_streams = map(lambda x: x.transpose(1, 2), out_streams)
 
     out_syn = []
     for sidx, os in enumerate(out_streams):
+        print(f"os.shape: {os.shape}")
         out_stream_syn = torch.zeros_like(os)
         a = analysis_filts[sidx].get_filt_coefs()
+        print(f"a.shape: {a.shape}")
+        if os.dims() == 4:
+            # (B, ar_order, T) -> (B, ar_order, T, 1) -> (B, ar_order, T, num_gaussians)
+            a = torch.unsqueeze(3).repeat(1, 1, 1, os.shape[3])
         # apply IIR filter for each dimiesion
         for idx in range(os.shape[1]):
             # NOTE: scipy.signal.lfilter accespts b, a in order,
@@ -77,7 +86,11 @@ def _shallow_ar_inference(out, stream_sizes, analysis_filts):
         out_syn += [out_stream_syn]
 
     out_syn = torch.cat(out_syn, 1)
-    return out_syn.transpose(1, 2)
+    if out.dims() == 4:
+        # (B, C, T, num_gaussians) -> (B, T, num_gaussians, C)  
+        return out_syn.permute(0, 3, 1, 2)
+            else:
+        return out_syn.transpose(1, 2)
 
 
 class Conv1dResnetSAR(Conv1dResnet):
