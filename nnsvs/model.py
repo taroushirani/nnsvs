@@ -130,7 +130,9 @@ class Conv1dResnetMDN(nn.Module):
                  nn.ReLU(),
                  MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)]
         self.model = nn.Sequential(*model)
-        self.prediction_type="probabilistic"
+
+    def prediction_type(self):
+        return PredictionType.PROBABILISTIC
 
     def forward(self, x, lengths=None):
         return self.model(x)
