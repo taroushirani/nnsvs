@@ -18,6 +18,9 @@ def select_streams(inputs, stream_sizes=[60, 1, 1, 1],
             continue
         if len(inputs.shape) == 3:
             s = inputs[:, :, start_idx:start_idx + size]
+        elif len(inputs.shape) == 4:
+            # MDN(B, T, num_gaussians, C)
+            s = inputs[:, :, ;, start_idx:start_idx + size]
         else:
             s = inputs[:, start_idx:start_idx + size]
         ret.append(s)
@@ -35,6 +38,9 @@ def split_streams(inputs, stream_sizes=[60, 1, 1, 1]):
             start_indices, stream_sizes):
         if len(inputs.shape) == 3:
             s = inputs[:, :, start_idx:start_idx + size]
+        elif len(inputs.shape) == 4:
+            # MDN(B, T, num_gaussians, C)
+            s = inputs[:, :, :, start_idx:start_idx + size]
         else:
             s = inputs[:, start_idx:start_idx + size]
         ret.append(s)
