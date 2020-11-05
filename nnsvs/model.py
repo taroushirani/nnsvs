@@ -72,22 +72,26 @@ def _shallow_ar_inference(out, stream_sizes, analysis_filts):
         out_stream_syn = torch.zeros_like(os)
         a = analysis_filts[sidx].get_filt_coefs()
 #        print(f"a.shape: {a.shape}")
-        if os.dim() == 4:
-            # (T, B, ar_order) -> (T, B, ar_order, 1) -> (T, B, ar_order, num_gaussians)
-            a = a.unsqueeze(3).repeat(1, 1, 1, os.shape[3])
-#        print(f"a.shape: {a.shape}")
         # apply IIR filter for each dimiesion
-        for idx in range(os.shape[1]):
-            # NOTE: scipy.signal.lfilter accespts b, a in order,
-            # but torchaudio expect the oppsite; a, b in order
-            ai = a[idx].view(-1).flip(0)
-            bi = torch.zeros_like(ai)
-            bi[0] = 1
-            if out.dim() == 4:
-                out_stream_syn[:, idx, :, :] = lfilter(os[:, idx, :, :], ai, bi, clamp=False)
-            else:
+        if out.dim() == 4:
+            for gidx in range(os.shape[3]):
+                for idx in range(os.shape[1]):
+                   # NOTE: scipy.signal.lfilter accespts b, a in order,
+                    # but torchaudio expect the oppsite; a, b in order
+                    ai = a[idx].view(-1).flip(0)
+                    bi = torch.zeros_like(ai)
+                    bi[0] = 1
+                    out_stream_syn[:, idx, :, gidx] = lfilter(os[:, idx, :, gidx], ai, bi, clamp=False)
+            out_syn += [out_stream_syn]
+        else:
+            for idx in range(os.shape[1]):
+               # NOTE: scipy.signal.lfilter accespts b, a in order,
+                # but torchaudio expect the oppsite; a, b in order
+                ai = a[idx].view(-1).flip(0)
+                bi = torch.zeros_like(ai)
+                bi[0] = 1
                 out_stream_syn[:, idx, :] = lfilter(os[:, idx, :], ai, bi, clamp=False)
-        out_syn += [out_stream_syn]
+            out_syn += [out_stream_syn]
 
     out_syn = torch.cat(out_syn, 1)
     if out.dim() == 4:
@@ -97,7 +101,7 @@ def _shallow_ar_inference(out, stream_sizes, analysis_filts):
         return out_syn
     else:
         return out_syn.transpose(1, 2)
-
+    
 class Conv1dResnetSAR(Conv1dResnet):
     """Conv1dResnet with shallow AR structure
 
