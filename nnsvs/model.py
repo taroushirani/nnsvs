@@ -57,7 +57,7 @@ class Conv1dResnet(BaseModel):
 @torch.no_grad()
 def _shallow_ar_inference(out, stream_sizes, analysis_filts):
     from torchaudio.functional import lfilter
-    print(f"out.shape: {out_shape}")
+    print(f"out.shape: {out.shape}")
     out_streams = split_streams(out, stream_sizes)
     # back to conv1d friendly (B, C, T) format
     if out.dims() == 4:
