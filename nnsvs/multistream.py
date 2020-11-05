@@ -20,7 +20,7 @@ def select_streams(inputs, stream_sizes=[60, 1, 1, 1],
             s = inputs[:, :, start_idx:start_idx + size]
         elif len(inputs.shape) == 4:
             # MDN(B, T, num_gaussians, C)
-            s = inputs[:, :, ;, start_idx:start_idx + size]
+            s = inputs[:, :, :, start_idx:start_idx + size]
         else:
             s = inputs[:, start_idx:start_idx + size]
         ret.append(s)
