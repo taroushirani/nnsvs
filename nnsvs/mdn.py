@@ -74,16 +74,18 @@ def mdn_loss(log_pi, log_sigma, mu, target, log_pi_min=-7.0, log_sigma_min=-7.0,
     # Clip log_sigma and log_pi with log_clamp_min for numerical stability
     log_sigma = torch.clamp(log_sigma, min=log_sigma_min)
     log_pi = torch.clamp(log_pi, min=log_pi_min)
+    
     # Expand the dim of target as (B, T, D_out) -> (B, T, 1, D_out) -> (B, T,G, D_out)
     target = target.unsqueeze(2).expand_as(log_sigma)
 
-    # Center target variables and clamp it within +/- 5SD for numerical stability
+    # Center target variables and clamp them within +/- 5SD for numerical stability
     centered_target = target - mu
-    centerd_target = torch.where(centered_target > 5 * torch.exp(log_sigma), 5 * torch.exp(log_sigma), centered_target)
-    centerd_target = torch.where(centered_target < -5 * torch.exp(log_sigma), -5 * torch.exp(log_sigma), centered_target)
+    scale = torch.exp(log_sigma)
+    centered_target = torch.where(centered_target > 5 * scale, 5 * scale, centered_target)
+    centered_target = torch.where(centered_target < -5 * scale, -5 * scale, centered_target)
 
     # Create gaussians with mean=0 and variance=torch.exp(log_sigma)^2
-    dist = torch.distributions.Normal(loc=0, scale=torch.exp(log_sigma))
+    dist = torch.distributions.Normal(loc=0, scale=scale)
 
     # Use torch.log_sum_exp instead of the combination of torch.sum and torch.log
     # (Reference: https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563)
