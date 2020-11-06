@@ -52,7 +52,7 @@ class MDNLayer(nn.Module):
         mu = mu.view(len(minibatch), -1, self.num_gaussians, self.out_dim)
         return log_pi, log_sigma, mu
 
-def mdn_loss(log_pi, log_sigma, mu, target, log_pi_min=-7.0, log_sigma_min=-7.0, log_prob_min=-7.0, reduce=True):
+def mdn_loss(log_pi, log_sigma, mu, target, log_pi_min=-7.0, log_sigma_min=-7.0, reduce=True):
     """Calculates the error, given the MoG parameters and the target.
     The loss is the negative log likelihood of the data given the MoG
     parameters.
@@ -66,7 +66,6 @@ def mdn_loss(log_pi, log_sigma, mu, target, log_pi_min=-7.0, log_sigma_min=-7.0,
         target (B, T, D_out): The target variables.
         log_pi_min (float): Minimum value of log_pi (for numerical stability)
         log_sigma_min (float): Minimum value of log_sigma (for numerical stability)
-        log_prob_min (float): Minimum value of torch.distributions.Normal.log_prob
         reduce: If True, the losses are averaged for each batch.
     Returns:
         loss (B) or (B, T): Negative Log Likelihood of Mixture Density Networks.
@@ -78,8 +77,13 @@ def mdn_loss(log_pi, log_sigma, mu, target, log_pi_min=-7.0, log_sigma_min=-7.0,
     # Expand the dim of target as (B, T, D_out) -> (B, T, 1, D_out) -> (B, T,G, D_out)
     target = target.unsqueeze(2).expand_as(log_sigma)
 
-    # Create gaussians with mean=mu and variance=torch.exp(log_sigma)^2
-    dist = torch.distributions.Normal(loc=mu, scale=torch.exp(log_sigma))
+    # Center target variables and clamp it within +/- 5SD for numerical stability
+    centered_target = target - mu
+    centerd_target = torch.where(centered_target > 5 * torch.exp(log_sigma), 5 * torch.exp(log_sigma), centered_target)
+    centerd_target = torch.where(centered_target < -5 * torch.exp(log_sigma), -5 * torch.exp(log_sigma), centered_target)
+
+    # Create gaussians with mean=0 and variance=torch.exp(log_sigma)^2
+    dist = torch.distributions.Normal(loc=0, scale=torch.exp(log_sigma))
 
     # Use torch.log_sum_exp instead of the combination of torch.sum and torch.log
     # (Reference: https://github.com/r9y9/nnsvs/pull/20#discussion_r495514563)
@@ -91,8 +95,8 @@ def mdn_loss(log_pi, log_sigma, mu, target, log_pi_min=-7.0, log_sigma_min=-7.0,
     # log N(y_1,y_2,...,y_{D_out}|mu(x),sigma(x)) = log N(y_1|mu(x),sigma(x))...N(y_{D_out}|mu(x),sigma(x))
     #                                             = \sum_{i=1}^{D_out} log N(y_i|mu(x),sigma(x))
     # (B, T, G, D_out) -> (B, T, G)
-    log_prob = dist.log_prob(target)
-    log_prob = torch.clamp(log_prob, min=log_prob_min)
+    log_prob = dist.log_prob(centered_target)
+
     loss = torch.sum(log_prob, dim=3) + log_pi
     # Calculate negative log likelihood.
     # (B, T, G) -> (B, T)
