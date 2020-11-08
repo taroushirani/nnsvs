@@ -102,7 +102,7 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
             # Apply denormalization
             pred_timelag = timelag_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
     elif timelag_model.prediction_type() == PredictionType.MDNSAR:
-        max_sigma, max_mu = model.inference(feats, [feats.shape[1]])
+        max_sigma, max_mu = timelag_model.inference(feats, [feats.shape[1]])
         if np.any(timelag_config.has_dynamic_features):
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
@@ -222,7 +222,7 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
             # Apply denormalization
             pred_durations = duration_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
     elif duration_model.prediction_type() == PredictionType.MDNSAR:
-        max_sigma, max_mu = model.inference(feats, [feats.shape[1]])
+        max_sigma, max_mu = duration_model.inference(feats, [feats.shape[1]])
         if np.any(duration_config.has_dynamic_features):
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
@@ -299,7 +299,7 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
             # Apply denormalization
             pred_acoustic = acoustic_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
     elif acoustic_model.prediction_type() == PredictionType.MDNSAR:
-        max_sigma, max_mu = model.inference(feats, [feats.shape[1]])
+        max_sigma, max_mu = acoustic_model.inference(feats, [feats.shape[1]])
         if np.any(acoustic_config.has_dynamic_features):
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
