@@ -8,7 +8,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.nn.utils import weight_norm
 
 from nnsvs.base import BaseModel, PredictionType
-from nnsvs.mdn import MDNLayer
+from nnsvs.mdn import MDNLayer, mdn_get_most_probable_sigma_and_mu
 from nnsvs.dsp import TrTimeInvFIRFilter
 from nnsvs.multistream import split_streams
 
