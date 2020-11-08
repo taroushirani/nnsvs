@@ -23,7 +23,7 @@ train_set="train_no_dev"
 dev_set="dev"
 eval_set="eval"
 datasets=($train_set $dev_set $eval_set)
-testsets=($eval_set)
+testsets=($dev_set $eval_set)
 
 dumpdir=dump
 
@@ -43,7 +43,6 @@ else
 fi
 expdir=exp/$expname
 
-
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
     if [ ! -e downloads/HTS-demo_NIT-SONG070-F001 ]; then
         echo "stage -1: Downloading data"
@@ -51,7 +50,7 @@ if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
         cd downloads
         curl -LO http://hts.sp.nitech.ac.jp/archives/2.3/HTS-demo_NIT-SONG070-F001.tar.bz2
         tar jxvf HTS-demo_NIT-SONG070-F001.tar.bz2
-        cd $script_dir
+	cd $script_dir
     fi
 fi
 
@@ -59,7 +58,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     echo "stage 0: Data preparation"
     # the following three directories will be created
     # 1) data/timelag 2) data/duration 3) data/acoustic
-    python local/data_prep.py $db_root $out_dir --gain-normalize
+    python local/data_prep.py $hts_demo_root ./data --gain-normalize
 
     echo "train/dev/eval split"
     mkdir -p data/list

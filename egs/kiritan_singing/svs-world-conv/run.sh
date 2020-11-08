@@ -23,7 +23,7 @@ train_set="train_no_dev"
 dev_set="dev"
 eval_set="eval"
 datasets=($train_set $dev_set $eval_set)
-testsets=($eval_set)
+testsets=($dev_set $eval_set)
 
 dumpdir=dump
 
@@ -43,31 +43,33 @@ else
 fi
 expdir=exp/$expname
 
-
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
-    if [ ! -e downloads/HTS-demo_NIT-SONG070-F001 ]; then
+    if [ ! -e downloads/kiritan_singing ]; then
         echo "stage -1: Downloading data"
         mkdir -p downloads
-        cd downloads
-        curl -LO http://hts.sp.nitech.ac.jp/archives/2.3/HTS-demo_NIT-SONG070-F001.tar.bz2
-        tar jxvf HTS-demo_NIT-SONG070-F001.tar.bz2
-        cd $script_dir
+        git clone https://github.com/r9y9/kiritan_singing downloads/kiritan_singing
     fi
 fi
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     echo "stage 0: Data preparation"
-    # the following three directories will be created
-    # 1) data/timelag 2) data/duration 3) data/acoustic
-    python local/data_prep.py $db_root $out_dir --gain-normalize
+    kiritan_singing=downloads/kiritan_singing
+    cd $kiritan_singing && git checkout .
+    echo "" >> config.py
+    echo "wav_dir = \"$wav_root\"" >> config.py
+    ./run.sh
+    cd -
+    mkdir -p data/list
+    ln -sfn $PWD/$kiritan_singing/kiritan_singing_extra/timelag data/timelag
+    ln -sfn $PWD/$kiritan_singing/kiritan_singing_extra/duration data/duration
+    ln -sfn $PWD/$kiritan_singing/kiritan_singing_extra/acoustic data/acoustic
 
     echo "train/dev/eval split"
-    mkdir -p data/list
     find data/acoustic/ -type f -name "*.wav" -exec basename {} .wav \; \
         | sort > data/list/utt_list.txt
-    grep _003 data/list/utt_list.txt > data/list/$eval_set.list
-    grep _004 data/list/utt_list.txt > data/list/$dev_set.list
-    grep -v _003 data/list/utt_list.txt | grep -v _004 > data/list/$train_set.list
+    grep 01_ data/list/utt_list.txt > data/list/$eval_set.list
+    grep 02_ data/list/utt_list.txt > data/list/$dev_set.list
+    grep -v 01_ data/list/utt_list.txt | grep -v 02_ > data/list/$train_set.list
 fi
 
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then

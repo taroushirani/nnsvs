@@ -23,7 +23,7 @@ train_set="train_no_dev"
 dev_set="dev"
 eval_set="eval"
 datasets=($train_set $dev_set $eval_set)
-testsets=($eval_set)
+testsets=($dev_set $eval_set)
 
 dumpdir=dump
 
@@ -43,31 +43,28 @@ else
 fi
 expdir=exp/$expname
 
-
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
-    if [ ! -e downloads/HTS-demo_NIT-SONG070-F001 ]; then
-        echo "stage -1: Downloading data"
-        mkdir -p downloads
-        cd downloads
-        curl -LO http://hts.sp.nitech.ac.jp/archives/2.3/HTS-demo_NIT-SONG070-F001.tar.bz2
-        tar jxvf HTS-demo_NIT-SONG070-F001.tar.bz2
-        cd $script_dir
+    if [ ! -d downloads/PJS_corpus_ver1.1 ]; then
+        echo "stage -1: Downloading PJS"
+        echo "run `pip install gdown` if you don't have it locally"
+        mkdir -p downloads && cd downloads
+        gdown "https://drive.google.com/uc?id=1hPHwOkSe2Vnq6hXrhVtzNskJjVMQmvN_"
+        unzip PJS_corpus_ver1.1.zip
+        cd -
     fi
 fi
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     echo "stage 0: Data preparation"
-    # the following three directories will be created
-    # 1) data/timelag 2) data/duration 3) data/acoustic
-    python local/data_prep.py $db_root $out_dir --gain-normalize
-
+    python local/data_prep.py downloads/PJS_corpus_ver1.1 data --gain-normalize
     echo "train/dev/eval split"
     mkdir -p data/list
+    # exclude utts that are not strictly aligned
     find data/acoustic/ -type f -name "*.wav" -exec basename {} .wav \; \
-        | sort > data/list/utt_list.txt
-    grep _003 data/list/utt_list.txt > data/list/$eval_set.list
-    grep _004 data/list/utt_list.txt > data/list/$dev_set.list
-    grep -v _003 data/list/utt_list.txt | grep -v _004 > data/list/$train_set.list
+        | grep -v 030 | sort > data/list/utt_list.txt
+    grep 056 data/list/utt_list.txt > data/list/$eval_set.list
+    grep 055 data/list/utt_list.txt > data/list/$dev_set.list
+    grep -v 056 data/list/utt_list.txt | grep -v 056    > data/list/$train_set.list
 fi
 
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
