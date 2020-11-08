@@ -40,7 +40,7 @@ acoustic_model: acoustic_cnn_mdn
 # Pretrained model dir (leave empty to disable)
 pretrained_expdir:
 # batch size
-batch_size: 8
+batch_size: 2
 
 ###########################################################
 #                SYNTHESIS SETTING                        #
