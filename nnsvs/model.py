@@ -56,42 +56,27 @@ class Conv1dResnet(BaseModel):
 @torch.no_grad()
 def _shallow_ar_inference(out, stream_sizes, analysis_filts):
     from torchaudio.functional import lfilter
-#    print(f"out.shape: {out.shape}")
+
     out_streams = split_streams(out, stream_sizes)
-#    print(f"out_streams[0].shape: {out_streams[0].shape}")
     # back to conv1d friendly (B, C, T) format
-    if out.dim() == 4:
-        # MDN (B, T, num_gaussians, C) -> (B, C, T, num_gaussians)
-        out_streams = map(lambda x: x.permute(0, 3, 1, 2), out_streams)
-    else:
-        out_streams = map(lambda x: x.transpose(1, 2), out_streams)
+    out_streams = map(lambda x: x.transpose(1, 2), out_streams)
 
     out_syn = []
     for sidx, os in enumerate(out_streams):
-#        print(f"os.shape: {os.shape}")
         out_stream_syn = torch.zeros_like(os)
         a = analysis_filts[sidx].get_filt_coefs()
-#        print(f"a.shape: {a.shape}")
         # apply IIR filter for each dimiesion
-        if out.dim() == 4:
-            for gidx in range(os.shape[3]):
-                for idx in range(os.shape[1]):
-                   # NOTE: scipy.signal.lfilter accespts b, a in order,
-                    # but torchaudio expect the oppsite; a, b in order
-                    ai = a[idx].view(-1).flip(0)
-                    bi = torch.zeros_like(ai)
-                    bi[0] = 1
-                    out_stream_syn[:, idx, :, gidx] = lfilter(os[:, idx, :, gidx], ai, bi, clamp=False)
-            out_syn += [out_stream_syn]
-        else:
-            for idx in range(os.shape[1]):
-               # NOTE: scipy.signal.lfilter accespts b, a in order,
-                # but torchaudio expect the oppsite; a, b in order
-                ai = a[idx].view(-1).flip(0)
-                bi = torch.zeros_like(ai)
-                bi[0] = 1
-                out_stream_syn[:, idx, :] = lfilter(os[:, idx, :], ai, bi, clamp=False)
-            out_syn += [out_stream_syn]
+        for idx in range(os.shape[1]):
+            # NOTE: scipy.signal.lfilter accespts b, a in order,
+            # but torchaudio expect the oppsite; a, b in order
+            ai = a[idx].view(-1).flip(0)
+            bi = torch.zeros_like(ai)
+            bi[0] = 1
+            out_stream_syn[:, idx, :] = lfilter(os[:, idx, :], ai, bi, clamp=False)
+        out_syn += [out_stream_syn]
+
+    out_syn = torch.cat(out_syn, 1)
+    return out_syn.transpose(1, 2)
 
     out_syn = torch.cat(out_syn, 1)
     if out.dim() == 4:
@@ -242,7 +227,9 @@ class Conv1dResnetMDN(nn.Module):
                  nn.ReLU(),
                  MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)]
         self.model = nn.Sequential(*model)
-        self.prediction_type="probabilistic"
+
+    def prediction_type(self):
+        return PredictionType.PROBABILISTIC
 
     def forward(self, x, lengths=None):
         return self.model(x)
@@ -270,9 +257,13 @@ class MDNSAR(MDN):
             ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
         return torch.cat(ys, -1)
 
+    def prediction_type(self):
+        return PredictionType.MDNSAR
+
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
-        return log_pi, log_sigma, _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts)
+        max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return max_sigma, _shallow_ar_inference(max_mu, self.stream_sizes, self.analysis_filts)
 
 class RMDNSAR(RMDN):
     """MDN with shallow AR structure
@@ -297,9 +288,13 @@ class RMDNSAR(RMDN):
             ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
         return torch.cat(ys, -1)
 
+    def prediction_type(self):
+        return PredictionType.MDNSAR
+
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
-        return log_pi, log_sigma, _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts)
+        max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return max_sigma, _shallow_ar_inference(max_mu, self.stream_sizes, self.analysis_filts)
     
 class Conv1dResnetMDNSAR(Conv1dResnetMDN):
     """Conv1dResnet-MDN with shallow AR structure
@@ -324,6 +319,10 @@ class Conv1dResnetMDNSAR(Conv1dResnetMDN):
             ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
         return torch.cat(ys, -1)
 
+    def prediction_type(self):
+        return PredictionType.MDNSAR
+
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
-        return log_pi, log_sigma, _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts)
+        max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return max_sigma, _shallow_ar_inference(max_mu, self.stream_sizes, self.analysis_filts)

@@ -101,6 +101,20 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
             _, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
             # Apply denormalization
             pred_timelag = timelag_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+    elif timelag_model.prediction_type() == PredictionType.MDNSAR:
+        max_sigma, max_mu = model.inference(feats, [feats.shape[1]])
+        if np.any(timelag_config.has_dynamic_features):
+            # Apply denormalization
+            # (B, T, D_out) -> (T, D_out)
+            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * scaler.var_
+            max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+            # Apply MLPG
+            # (T, D_out) -> (T, static_dim)
+            pred_timelag = multi_stream_mlpg(max_mu, max_sigma_sq, get_windows(model_config.num_windows),
+                                             timelag_config.stream_sizes, timelag_config.has_dynamic_features)
+        else:
+            # (T, D_out)
+            pred_timelag = max_mu.squeeze(0).cpu().data.numpy()
     else:
         # (T, D_out)
         pred_timelag = timelag_model.inference(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
@@ -207,6 +221,20 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
             _, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
             # Apply denormalization
             pred_durations = duration_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+    elif duration_model.prediction_type() == PredictionType.MDNSAR:
+        max_sigma, max_mu = model.inference(feats, [feats.shape[1]])
+        if np.any(duration_config.has_dynamic_features):
+            # Apply denormalization
+            # (B, T, D_out) -> (T, D_out)
+            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * scaler.var_
+            max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+            # Apply MLPG
+            # (T, D_out) -> (T, static_dim)
+            pred_duration = multi_stream_mlpg(max_mu, max_sigma_sq, get_windows(model_config.num_windows),
+                                             duration_config.stream_sizes, duration_config.has_dynamic_features)
+        else:
+            # (T, D_out)
+            pred_duration = max_mu.squeeze(0).cpu().data.numpy()
     else:
         # (T, D_out)
         pred_durations = duration_model.inference(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()
@@ -270,6 +298,20 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
             _, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
             # Apply denormalization
             pred_acoustic = acoustic_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+    elif acoustic_model.prediction_type() == PredictionType.MDNSAR:
+        max_sigma, max_mu = model.inference(feats, [feats.shape[1]])
+        if np.any(acoustic_config.has_dynamic_features):
+            # Apply denormalization
+            # (B, T, D_out) -> (T, D_out)
+            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * scaler.var_
+            max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+            # Apply MLPG
+            # (T, D_out) -> (T, static_dim)
+            pred_acoustic = multi_stream_mlpg(max_mu, max_sigma_sq, get_windows(model_config.num_windows),
+                                             acoustic_config.stream_sizes, acoustic_config.has_dynamic_features)
+        else:
+            # (T, D_out)
+            pred_acoustic = max_mu.squeeze(0).cpu().data.numpy()
     else:
         # (T, D_out)
         pred_acoustic = acoustic_model.inference(x, [x.shape[1]]).squeeze(0).cpu().data.numpy()

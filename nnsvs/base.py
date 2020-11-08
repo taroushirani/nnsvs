@@ -10,8 +10,8 @@ from enum import Enum
 class PredictionType(Enum):
     DETERMINISTIC = 1
     PROBABILISTIC = 2
-
-
+    MDNSAR = 3
+    
 class TimeLagModel(ABC):
     @abstractmethod
     def forward(self, feats, feats_lens=None):
