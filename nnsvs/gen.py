@@ -106,8 +106,8 @@ def predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_sc
         if np.any(timelag_config.has_dynamic_features):
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
-            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * scaler.var_
-            max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * timelag_out_scaler.var_
+            max_mu = timelag_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
             # Apply MLPG
             # (T, D_out) -> (T, static_dim)
             pred_timelag = multi_stream_mlpg(max_mu, max_sigma_sq, get_windows(model_config.num_windows),
@@ -226,8 +226,8 @@ def predict_duration(device, labels, duration_model, duration_config, duration_i
         if np.any(duration_config.has_dynamic_features):
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
-            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * scaler.var_
-            max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * duration_out_scaler.var_
+            max_mu = duration_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
             # Apply MLPG
             # (T, D_out) -> (T, static_dim)
             pred_duration = multi_stream_mlpg(max_mu, max_sigma_sq, get_windows(model_config.num_windows),
@@ -303,8 +303,8 @@ def predict_acoustic(device, labels, acoustic_model, acoustic_config, acoustic_i
         if np.any(acoustic_config.has_dynamic_features):
             # Apply denormalization
             # (B, T, D_out) -> (T, D_out)
-            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * scaler.var_
-            max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
+            max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * acoustic_out_scaler.var_
+            max_mu = acoustic_out_scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
             # Apply MLPG
             # (T, D_out) -> (T, static_dim)
             pred_acoustic = multi_stream_mlpg(max_mu, max_sigma_sq, get_windows(model_config.num_windows),
