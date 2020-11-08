@@ -77,15 +77,6 @@ def _shallow_ar_inference(out, stream_sizes, analysis_filts):
 
     out_syn = torch.cat(out_syn, 1)
     return out_syn.transpose(1, 2)
-
-    out_syn = torch.cat(out_syn, 1)
-    if out.dim() == 4:
-        # (B, C, T, num_gaussians) -> (B, T, num_gaussians, C)  
-        out_syn = out_syn.permute(0, 2, 3, 1)
-#        print(f"out_syn.shape: {out_syn.shape}")
-        return out_syn
-    else:
-        return out_syn.transpose(1, 2)
     
 class Conv1dResnetSAR(Conv1dResnet):
     """Conv1dResnet with shallow AR structure
