@@ -16,5 +16,5 @@ netG:
   dropout: 0.1
   num_gaussians: 4
 
-  stream_sizes: [180,3,1,5]
+  stream_sizes: [180,3,1,15]
   ar_orders: [1,2,0,0]
