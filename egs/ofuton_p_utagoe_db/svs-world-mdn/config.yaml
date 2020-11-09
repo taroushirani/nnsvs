@@ -3,7 +3,7 @@
 spk: "ofuton_p"
 
 ## exp tag(for managing experiments)
-tag: 
+tag:
 
 ## Directory of Unzipped singing voice database
 # PLEASE CHANGE THE PATH BASED ON YOUR ENVIRONMENT
@@ -21,11 +21,11 @@ exclude_songs: []
 ## Sinsy dictionary directory
 # This singing voice database contains the unvoiced vowels "I" and "U".
 # To enable the unvoiced vowels, modified version of sinsy dictionary files
-# are needed. 
+# are needed.
 sinsy_dic: "../../_common/no2/dic"
 
 ## HTS-style question used for extracting musical/linguistic context from musicxml files
-question_path: "../../_common/hed/jp_qst003_nnsvs.hed"
+question_path: "../../_common/hed/jp_qst001_nnsvs.hed"
 
 ### Data preparation related settings.
 ## Song segmentation by silence durations.
@@ -50,12 +50,22 @@ timelag_allowed_range_rest: [-40, 39]
 # DO NOT CHANGE this unless you know the relationship between the dim of bap and sample_rate.
 sample_rate: 48000
 
+###########################################################
+#                FEATURE EXTRACTION SETTING               #
+###########################################################
 
-### Training related settings.
+timelag_features: defaults
+duration_features: defaults
+acoustic_features: static_deltadelta
+
+###########################################################
+#                TRAINING SETTING                         #
+###########################################################
+
 ## Models
 # To customize, put your config in conf/train/model/ and
 # specify the config name below
-timelag_model: timelag_fnn
+timelag_model: timelag_ffn
 duraiton_model: duration_rmdn
 acoustic_model: acoustic_rmdn
 
@@ -64,3 +74,13 @@ acoustic_model: acoustic_rmdn
 pretrained_expdir:
 # batch size
 batch_size: 4
+
+###########################################################
+#                SYNTHESIS SETTING                        #
+###########################################################
+timelag_synthesis: defaults
+duration_synthesis: defaults
+acoustic_synthesis: defaults
+
+# latest.pth, best_loss.pth or ${checkpoint_name}.pth
+eval_checkpoint: best_loss.pth
