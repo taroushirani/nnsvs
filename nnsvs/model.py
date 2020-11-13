@@ -9,7 +9,7 @@ from torch.nn.utils import weight_norm
 
 from nnsvs.base import BaseModel, PredictionType
 from nnsvs.mdn import MDNLayer, mdn_get_most_probable_sigma_and_mu
-from nnsvs.dsp import TrTimeInvFIRFilter
+from nnsvs.dsp import TrTimeInvFIRFilter, SARFilter
 from nnsvs.multistream import split_streams
 
 
