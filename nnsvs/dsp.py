@@ -105,7 +105,6 @@ class SARFilter(TrTimeInvFIRFilter):
     """
     def __init__(self, channels, filt_dim, causal=True, tanh=True, fixed_0th=True, sar_effect_size=0.2):
         # Initilize filt coef with small random values
-        print(sar_effect_size)
         init_filt_coef = torch.randn(filt_dim) * (sar_effect_size / filt_dim / 2.0)
                                                   
         super(SARFilter, self).__init__(channels, filt_dim, causal, tanh, fixed_0th)
@@ -116,11 +115,10 @@ class SARFilter(TrTimeInvFIRFilter):
 
     def get_filt_coefs(self):
         # apply tanh for filtter stability
-        print(self.sar_effect_size)
         b = torch.tanh(self.weight) if self.tanh else self.weight
         b = b.clone()
         sar_effect_limit = self.sar_effect_size / self.filt_dim 
-        b = torch.clamp(b, min=-sar_effect_limit, max=sar_effect_limit)
+#        b = torch.clamp(b, min=-sar_effect_limit, max=sar_effect_limit)
         if self.fixed_0th:
             b[:, :, -1] = 1
         return b
