@@ -87,3 +87,38 @@ class TrTimeInvFIRFilter(nn.Conv1d):
         if self.padding[0] > 0:
             out = out[:, :, :-self.padding[0]] if self.causal else out
         return out
+
+class SARFilter(TrTimeInvFIRFilter):
+    """Trainable Time-invatiant FIR filter for SAR
+
+    H(z) = \sigma_{k=0}^{filt_dim} b_{k}z_{-k}
+
+    Note that b_{0} is fixed to 1 if fixed_0th is True.
+
+    Args:
+        channels (int): input channels
+        filt_dim (int): FIR filter dimension
+        causal (bool): causal
+        tanh (bool): apply tanh to filter coef or not.
+        fixed_0th (bool): fix the first filt coef to 1 or not.
+        sar_effect_limit (float): 
+    """
+    def __init__(self, channels, filt_dim, causal=True, tanh=True, fixed_0th=True, sar_effect_limit_ratio=0.2):
+        # Initilize filt coef with small random values
+        init_filt_coef = torch.randn(filt_dim) * (1 / (filt_dim * 2))
+                                                  
+        super(SARFilter, self).__init__(channels, filt_dim, causal, tanh, fixed_0th)
+        self.weight.data[:, :, :] = init_filt_coef.flip(0)
+        self.weight.requires_grad = True
+        self.filt_dim = filt_dim
+        self.sar_effect_limit_ratio = 0.2
+
+    def get_filt_coefs(self):
+        # apply tanh for filtter stability
+        b = torch.tanh(self.weight) if self.tanh else self.weight
+        b = b.clone()
+        sar_effect_limit = self.sar_effect_limit_ratio / self.filt_dim 
+        b = torch.clamp(b, min=-sar_effect_limit, max=sar_effect_limit)
+        if self.fixed_0th:
+            b[:, :, -1] = 1
+        return b

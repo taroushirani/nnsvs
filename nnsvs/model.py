@@ -301,7 +301,8 @@ class Conv1dResnetMDNSAR(Conv1dResnetMDN):
         self.stream_sizes = stream_sizes
         self.analysis_filts = nn.ModuleList()
         for s, K in zip(stream_sizes, ar_orders):
-            self.analysis_filts += [TrTimeInvFIRFilter(s, K+1)]
+#            self.analysis_filts += [TrTimeInvFIRFilter(s, K+1)]
+            self.analysis_filts += [SARFilter(s, K+1)]
 
     def preprocess_target(self, y):
         assert sum(self.stream_sizes) == y.shape[-1]
