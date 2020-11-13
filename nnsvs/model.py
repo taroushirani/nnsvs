@@ -86,14 +86,14 @@ class Conv1dResnetSAR(Conv1dResnet):
         ar_orders (list): Filter dimensions for each stream.
     """
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=4, dropout=0.0,
-            stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+                 stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20], sar_effect_size=0.2):
         super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout)
         self.stream_sizes = stream_sizes
 
         self.analysis_filts = nn.ModuleList()
         for s, K in zip(stream_sizes, ar_orders):
 #            self.analysis_filts += [TrTimeInvFIRFilter(s, K+1)]
-            self.analysis_filts += [SARFilter(s, K+1)]
+            self.analysis_filts += [SARFilter(s, K+1, sar_effect_size=sar_effect_size)]
 
     def preprocess_target(self, y):
         assert sum(self.stream_sizes) == y.shape[-1]
@@ -234,7 +234,8 @@ class MDNSAR(MDN):
         ar_orders (list): Filter dimensions for each stream.
     """
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0,
-                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20],
+                 sar_effect_size=0.2):
         super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout, num_gaussians)
 
         self.stream_sizes = stream_sizes
@@ -266,7 +267,8 @@ class RMDNSAR(RMDN):
         ar_orders (list): Filter dimensions for each stream.
     """
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, bidirectional=True, dropout=0.0,
-                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20],
+                 sar_effect_size=0.2):
         super().__init__(in_dim, hidden_dim, out_dim, num_layers, bidirectional, dropout, num_gaussians)
 
         self.stream_sizes = stream_sizes
@@ -298,14 +300,15 @@ class Conv1dResnetMDNSAR(Conv1dResnetMDN):
         ar_orders (list): Filter dimensions for each stream.
     """
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0,
-                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20],
+                 sar_effect_size=0.2):
         super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout, num_gaussians)
 
         self.stream_sizes = stream_sizes
         self.analysis_filts = nn.ModuleList()
         for s, K in zip(stream_sizes, ar_orders):
 #            self.analysis_filts += [TrTimeInvFIRFilter(s, K+1)]
-            self.analysis_filts += [SARFilter(s, K+1)]
+            self.analysis_filts += [SARFilter(s, K+1, sar_effect_size=sar_effect_size)]
 
     def preprocess_target(self, y):
         assert sum(self.stream_sizes) == y.shape[-1]
