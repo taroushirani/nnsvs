@@ -111,7 +111,7 @@ class SARFilter(TrTimeInvFIRFilter):
         self.weight.data[:, :, :] = init_filt_coef.flip(0)
         self.weight.requires_grad = True
         self.filt_dim = filt_dim
-        self.sar_effect_size = 0.2
+        self.sar_effect_size = sar_effect_size
 
     def get_filt_coefs(self):
         # apply tanh for filtter stability
