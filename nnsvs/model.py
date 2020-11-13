@@ -89,7 +89,6 @@ class Conv1dResnetSAR(Conv1dResnet):
                  stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20], sar_effect_size=0.2):
         super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout)
         self.stream_sizes = stream_sizes
-        self.sar_effect_size=sar_effect_size
         
         self.analysis_filts = nn.ModuleList()
         for s, K in zip(stream_sizes, ar_orders):
