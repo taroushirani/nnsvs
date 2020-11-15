@@ -38,7 +38,7 @@ optim:
 
 train:
   out_dir: exp
-  nepochs: 100
+  nepochs: 50
   checkpoint_epoch_interval: 20
 
   stream_wise_loss: false
