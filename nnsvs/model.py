@@ -69,8 +69,7 @@ def _shallow_ar_inference(out, stream_sizes, analysis_filts):
         for idx in range(os.shape[1]):
             # NOTE: scipy.signal.lfilter accespts b, a in order,
             # but torchaudio expect the oppsite; a, b in order
-            ai =  - a[idx].view(-1).flip(0)
-            ai[0] = 1
+            ai = a[idx].view(-1).flip(0)
             bi = torch.zeros_like(ai)
             bi[0] = 1
             out_stream_syn[:, idx, :] = lfilter(os[:, idx, :], ai, bi, clamp=False)
