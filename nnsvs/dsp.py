@@ -105,7 +105,8 @@ class SARFilter(TrTimeInvFIRFilter):
     """
     def __init__(self, channels, filt_dim, causal=True, tanh=True, fixed_0th=True, sar_effect_size=0.2):
         # Initilize filt coef with small random values
-        init_filt_coef = torch.randn(filt_dim) * (sar_effect_size / filt_dim / 2.0)
+#        init_filt_coef = torch.randn(filt_dim) * (sar_effect_size / filt_dim / 2.0)
+        init_filt_coef = torch.randn(filt_dim) * (1.0 / filt_dim)
                                                   
         super(SARFilter, self).__init__(channels, filt_dim, causal, tanh, fixed_0th)
         self.weight.data[:, :, :] = init_filt_coef.flip(0)
