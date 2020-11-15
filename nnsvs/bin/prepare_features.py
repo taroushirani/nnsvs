@@ -9,6 +9,7 @@ from tqdm import tqdm
 from os.path import basename, splitext, exists
 import os
 import sys
+import cProfile
 
 from nnmnkwii.datasets import FileSourceDataset
 
@@ -145,4 +146,5 @@ def entry():
 
 
 if __name__ == "__main__":
+    cProfile.run('main()', filename='main.prof')
     my_app()
