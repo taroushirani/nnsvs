@@ -20,7 +20,7 @@ out_dir: "./data"
 ###########################################################
 
 # HTS-style question used for extracting musical/linguistic context from musicxml files
-question_path: "../../_common/hed/jp_qst001_nnsvs.hed"
+question_path: "../../_common/hed/jp_qst_crazy_mono_001_184D.hed.txt"
 
 timelag_features: defaults
 duration_features: defaults
