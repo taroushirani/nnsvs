@@ -96,6 +96,6 @@ duration_synthesis: defaults
 acoustic_synthesis: defaults
 
 # latest.pth or best_loss.pth
-timelag_eval_checkpoint: latest.pth
-duration_eval_checkpoint: latest.pth
-acoustic_eval_checkpoint: latest.pth
+timelag_eval_checkpoint: best_loss.pth
+duration_eval_checkpoint: best_loss.pth
+acoustic_eval_checkpoint: best_loss.pth
