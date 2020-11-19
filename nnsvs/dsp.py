@@ -116,9 +116,9 @@ class SARFilter(TrTimeInvFIRFilter):
         self.dropout = nn.Dropout(dropout)
         
     def forward(self, x):
-        b = self.get_filt_coefs()
+        b = self.dropout(self.get_filt_coefs())
         out = F.conv1d(
-            self.dropout(x), b, self.bias, self.stride, self.padding, self.dilation, self.groups)
+            x, b, self.bias, self.stride, self.padding, self.dilation, self.groups)
         if self.padding[0] > 0:
             out = out[:, :, :-self.padding[0]] if self.causal else out
         return out
