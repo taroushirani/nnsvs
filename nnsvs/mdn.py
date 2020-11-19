@@ -169,7 +169,7 @@ def mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu):
         mu (torch.Tensor): Tensor of shape (B, T, G, D_out)
             The means of the Gaussians. D_out is out_dim of class MDNLayer.
     Returns:
-        - torch.Tensor: Tensor of shape (B, T, D_out). The standardd deviations
+        - torch.Tensor: Tensor of shape (B, T, D_out). The standard deviations
             of the most probable Gaussian component.
         - torch.Tensor: Tensor of shape (B, T, D_out). Means of the Gaussians.
     """
