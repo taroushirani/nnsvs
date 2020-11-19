@@ -73,7 +73,7 @@ acoustic_features: static_deltadelta
 # NOTE: *_model: model definition, *_train: general train configs,
 # *_data: data configs (e.g., batch size)
 
-timelag_model: timelag_fnn
+timelag_model: timelag_ffn
 timelag_train: myconfig
 timelag_data: myconfig
 
