@@ -12,7 +12,7 @@ netG:
   out_dim: 199
   hidden_dim: 128
   num_layers: 6
-  dropout: 0.1
+  dropout: 0.5
   num_gaussians: 4
 
   stream_sizes: [180, 3, 1, 15]
