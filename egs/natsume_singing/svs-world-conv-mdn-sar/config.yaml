@@ -54,18 +54,49 @@ timelag_allowed_range_rest: [-40, 39]
 # DO NOT CHANGE this unless you know the relationship between the dim of bap and sample_rate.
 sample_rate: 48000
 
-### Training related settings.
-## Models
-# To customize, put your config in conf/train/model/ and
+###########################################################
+#                FEATURE EXTRACTION SETTING               #
+###########################################################
+
+timelag_features: defaults
+duration_features: defaults
+acoustic_features: static_deltadelta
+
+###########################################################
+#                TRAINING SETTING                         #
+###########################################################
+
+# Models
+# To customize, put your config or change ones in
+# conf/train/{timelag,duration,acoustic}/ and
 # specify the config name below
+# NOTE: *_model: model definition, *_train: general train configs,
+# *_data: data configs (e.g., batch size)
+
 timelag_model: timelag_fnn
+timelag_train: myconfig
+timelag_data: myconfig
+
 duraiton_model: duration_rmdn
-acoustic_model: acoustic_mdn_sar
+duration_train: myconfig
+duration_data: myconfig
 
-## Pretrained model dir
-# leave empty to disable
+acoustic_model: acoustic_conv_mdn_sar
+acoustic_train: myconfig
+acoustic_data: myconfig
+
+## Pretrained model dir( leave empty to disable)
 pretrained_expdir:
-# batch size
-batch_size: 8
 
 
+###########################################################
+#                SYNTHESIS SETTING                        #
+###########################################################
+timelag_synthesis: defaults
+duration_synthesis: defaults
+acoustic_synthesis: defaults
+
+# latest.pth or best.pth
+timelag_eval_checkpoint: best_loss.pth
+duration_eval_checkpoint: best_loss.pth
+acoustic_eval_checkpoint: best_loss.pth
