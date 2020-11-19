@@ -29,7 +29,7 @@ exclude_songs: []
 sinsy_dic: "../../_common/no2/dic"
 
 ## HTS-style question used for extracting musical/linguistic context from musicxml files
-question_path: "../../_common/hed/jp_qst001_nnsvs.hed"
+question_path: "../../_common/hed/jp_qst003_nnsvs.hed"
 
 ### Data preparation related settings.
 ## Song segmentation by silence durations.
@@ -66,18 +66,28 @@ acoustic_features: static_deltadelta
 #                TRAINING SETTING                         #
 ###########################################################
 
-## Models
-# To customize, put your config in conf/train/model/ and
+# Models
+# To customize, put your config or change ones in
+# conf/train/{timelag,duration,acoustic}/ and
 # specify the config name below
+# NOTE: *_model: model definition, *_train: general train configs,
+# *_data: data configs (e.g., batch size)
+
 timelag_model: timelag_ffn
+timelag_train: myconfig
+timelag_data: myconfig
+
 duraiton_model: duration_lstm
-acoustic_model: acoustic_conv
+duration_train: myconfig
+duration_data: myconfig
+
+acoustic_model: acoustic_conv_sar
+acoustic_train: myconfig
+acoustic_data: myconfig
 
 ## Pretrained model dir
 # leave empty to disable
 pretrained_expdir:
-# batch size
-batch_size: 8
 
 ###########################################################
 #                SYNTHESIS SETTING                        #
@@ -86,5 +96,7 @@ timelag_synthesis: defaults
 duration_synthesis: defaults
 acoustic_synthesis: defaults
 
-# latest.pth, best_loss.pth or ${checkpoint_name}.pth
-eval_checkpoint: latest.pth
+# latest.pth or best.pth
+timelag_eval_checkpoint: best_loss.pth
+duration_eval_checkpoint: best_loss.pth
+acoustic_eval_checkpoint: best_loss.pth
