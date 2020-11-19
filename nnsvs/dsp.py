@@ -117,6 +117,9 @@ class SARFilter(TrTimeInvFIRFilter):
         
     def forward(self, x):
         b = self.dropout(self.get_filt_coefs())
+        if self.fixed_0th:
+            b[:, :, -1] = 1
+            
         out = F.conv1d(
             x, b, self.bias, self.stride, self.padding, self.dilation, self.groups)
         if self.padding[0] > 0:
