@@ -271,8 +271,8 @@ class MDNSAR(MDN):
 
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
-        max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
-        return _shallow_ar_inference(max_mu, self.stream_sizes, self.analysis_filts), max_sigma
+        sigma, mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts), sigma
 
 class RMDNSAR(RMDN):
     """MDN with shallow AR structure
@@ -300,8 +300,8 @@ class RMDNSAR(RMDN):
 
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
-        max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
-        return _shallow_ar_inference(max_mu, self.stream_sizes, self.analysis_filts), max_sigma
+        sigma, mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts), sigma
     
 class Conv1dResnetMDNSAR(Conv1dResnetMDN):
     """Conv1dResnet-MDN with shallow AR structure
@@ -329,5 +329,5 @@ class Conv1dResnetMDNSAR(Conv1dResnetMDN):
 
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
-        max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
-        return _shallow_ar_inference(max_mu, self.stream_sizes, self.analysis_filts), max_sigma
+        sigma, mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return _shallow_ar_inference(mu, self.stream_sizes, self.analysis_filts), sigma
