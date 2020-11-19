@@ -77,7 +77,7 @@ timelag_model: timelag_fnn
 timelag_train: myconfig
 timelag_data: myconfig
 
-duraiton_model: duration_rmdn
+duration_model: duration_rmdn
 duration_train: myconfig
 duration_data: myconfig
 
