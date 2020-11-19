@@ -166,8 +166,7 @@ def train_loop(config, device, model, optimizer, lr_scheduler, data_loaders):
                 y = model.preprocess_target(y)
 
                 # Run forwaard
-                if model.prediction_type() == PredictionType.PROBABILISTIC or \
-                   model.prediction_type() == PredictionType.MDNSAR:
+                if model.prediction_type() == PredictionType.PROBABILISTIC:
                     pi, sigma, mu = model(x, sorted_lengths)
 
                     # (B, max(T)) or (B, max(T), D_out)
