@@ -18,7 +18,6 @@ from nnsvs.multistream import multi_stream_mlpg
 from nnsvs.bin.train import NpyFileSource
 from nnsvs.logger import getLogger
 from nnsvs.base import PredictionType
-from nnsvs.mdn import mdn_get_most_probable_sigma_and_mu, mdn_get_sample
 
 logger = None
 
@@ -68,20 +67,6 @@ def my_app(config : DictConfig) -> None:
                     # (T, D_out)
                     out = max_mu.squeeze(0).cpu().data.numpy()
                     out = scaler.inverse_transform(out)
-            elif model.prediction_type() == PredictionType.MDNSAR:
-                max_sigma, max_mu = model.inference(feats, [feats.shape[1]])
-                if np.any(model_config.has_dynamic_features):
-                    # Apply denormalization
-                    # (B, T, D_out) -> (T, D_out)
-                    max_sigma_sq = max_sigma.squeeze(0).cpu().data.numpy() ** 2 * scaler.var_
-                    max_mu = scaler.inverse_transform(max_mu.squeeze(0).cpu().data.numpy())
-                    # Apply MLPG
-                    # (T, D_out) -> (T, static_dim)
-                    out = multi_stream_mlpg(max_mu, max_sigma_sq, get_windows(model_config.num_windows),
-                                            model_config.stream_sizes, model_config.has_dynamic_features)
-                else:
-                    # (T, D_out)
-                    out = max_mu.squeeze(0).cpu().data.numpy()
             else:
                 out = model.inference(feats, [feats.shape[1]]).squeeze(0).cpu().data.numpy()
                 out = scaler.inverse_transform(out)

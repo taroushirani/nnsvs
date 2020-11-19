@@ -270,9 +270,6 @@ class MDNSAR(MDN):
             ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
         return torch.cat(ys, -1)
 
-    def prediction_type(self):
-        return PredictionType.MDNSAR
-
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
         max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
@@ -303,9 +300,6 @@ class RMDNSAR(RMDN):
             ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
         return torch.cat(ys, -1)
 
-    def prediction_type(self):
-        return PredictionType.MDNSAR
-
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)
         max_sigma, max_mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
@@ -327,7 +321,7 @@ class Conv1dResnetMDNSAR(Conv1dResnetMDN):
         self.analysis_filts = nn.ModuleList()
         for s, K in zip(stream_sizes, ar_orders):
 #            self.analysis_filts += [TrTimeInvFIRFilter(s, K+1)]
-            self.analysis_filts += [SARFilter(s, K+1, sar_effect_size=sar_effect_size)]
+            self.analysis_filts += [SARFilter(s, K+1, dropout=dropout)]
 
     def preprocess_target(self, y):
         assert sum(self.stream_sizes) == y.shape[-1]
@@ -335,9 +329,6 @@ class Conv1dResnetMDNSAR(Conv1dResnetMDN):
         for idx, yi in enumerate(ys):
             ys[idx] = self.analysis_filts[idx](yi.transpose(1,2)).transpose(1,2)
         return torch.cat(ys, -1)
-
-    def prediction_type(self):
-        return PredictionType.MDNSAR
 
     def inference(self, x, lengths=None):
         log_pi, log_sigma, mu = self.forward(x, lengths)

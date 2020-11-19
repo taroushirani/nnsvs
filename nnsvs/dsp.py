@@ -101,9 +101,9 @@ class SARFilter(TrTimeInvFIRFilter):
         causal (bool): causal
         tanh (bool): apply tanh to filter coef or not.
         fixed_0th (bool): fix the first filt coef to 1 or not.
-        sar_effect_size (float): the effect ratio of SAR and base model.
+        dropout (float): dropout ratio
     """
-    def __init__(self, channels, filt_dim, causal=True, tanh=True, fixed_0th=True, sar_effect_size=0.2):
+    def __init__(self, channels, filt_dim, causal=True, tanh=True, fixed_0th=True, dropout=0.5):
         # Initilize filt coef with small random values
 #        init_filt_coef = torch.randn(filt_dim) * (sar_effect_size / filt_dim / 2.0)
         init_filt_coef = torch.randn(filt_dim) * (1.0 / filt_dim)
@@ -113,13 +113,12 @@ class SARFilter(TrTimeInvFIRFilter):
         self.weight.requires_grad = True
         self.filt_dim = filt_dim
         self.sar_effect_size = sar_effect_size
-
-    def get_filt_coefs(self):
-        # apply tanh for filtter stability
-        b = torch.tanh(self.weight) if self.tanh else self.weight
-        b = b.clone()
-        sar_effect_limit = self.sar_effect_size / self.filt_dim 
-#        b = torch.clamp(b, min=-sar_effect_limit, max=sar_effect_limit)
-        if self.fixed_0th:
-            b[:, :, -1] = 1
-        return b
+        self.dropout = nn.Dropout(dropout)
+        
+    def forward(self, x):
+        b = self.get_filt_coefs()
+        out = F.conv1d(
+            self.dropout(x), b, self.bias, self.stride, self.padding, self.dilation, self.groups)
+        if self.padding[0] > 0:
+            out = out[:, :, :-self.padding[0]] if self.causal else out
+        return out
