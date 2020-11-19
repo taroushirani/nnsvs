@@ -253,8 +253,8 @@ class MDNSAR(MDN):
         ar_orders (list): Filter dimensions for each stream.
     """
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0,
-                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
-        super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout, num_gaussians)
+                 num_gaussians=8, dim_wise=False, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+        super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout, num_gaussians, dim_wise)
 
         self.stream_sizes = stream_sizes
         self.analysis_filts = nn.ModuleList()
@@ -282,8 +282,8 @@ class RMDNSAR(RMDN):
         ar_orders (list): Filter dimensions for each stream.
     """
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, bidirectional=True, dropout=0.0,
-                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
-        super().__init__(in_dim, hidden_dim, out_dim, num_layers, bidirectional, dropout, num_gaussians)
+                 num_gaussians=8, dim_wise=False, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+        super().__init__(in_dim, hidden_dim, out_dim, num_layers, bidirectional, dropout, num_gaussians, dim_wise)
 
         self.stream_sizes = stream_sizes
         self.analysis_filts = nn.ModuleList()
@@ -311,8 +311,8 @@ class Conv1dResnetMDNSAR(Conv1dResnetMDN):
         ar_orders (list): Filter dimensions for each stream.
     """
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0,
-                 num_gaussians=8, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
-        super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout, num_gaussians)
+                 num_gaussians=8, dim_wise=False, stream_sizes=[180, 3, 1, 15], ar_orders=[20, 200, 20, 20]):
+        super().__init__(in_dim, hidden_dim, out_dim, num_layers, dropout, num_gaussians, dim_wise)
 
         self.stream_sizes = stream_sizes
         self.analysis_filts = nn.ModuleList()

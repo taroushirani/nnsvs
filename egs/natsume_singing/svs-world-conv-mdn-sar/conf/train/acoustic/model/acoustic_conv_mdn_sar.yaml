@@ -14,6 +14,7 @@ netG:
   num_layers: 6
   dropout: 0.5
   num_gaussians: 4
-
+  dim_wise: true
+  
   stream_sizes: [180, 3, 1, 15]
   ar_orders: [20, 200, 20, 20]
