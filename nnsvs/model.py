@@ -174,7 +174,8 @@ class LSTMRNNSAR(LSTMRNN):
 
 
 class RMDN(BaseModel):
-    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, bidirectional=True, dropout=0.0, num_gaussians=8):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, bidirectional=True,
+            dropout=0.0, num_gaussians=8, dim_wise=False):
         super(RMDN, self).__init__()
         self.linear = nn.Linear(in_dim, hidden_dim)
         self.relu = nn.ReLU()
@@ -182,7 +183,7 @@ class RMDN(BaseModel):
         self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers,
                             bidirectional=bidirectional, batch_first=True,
                             dropout=dropout)
-        self.mdn = MDNLayer(self.num_direction*hidden_dim, out_dim, num_gaussians=num_gaussians)
+        self.mdn = MDNLayer(self.num_direction*hidden_dim, out_dim, num_gaussians, dim_wise)
 
     def prediction_type(self):
         return PredictionType.PROBABILISTIC
@@ -195,15 +196,21 @@ class RMDN(BaseModel):
         out = self.mdn(out)
         return out
 
+    def inference(self, x, lengths=None):
+        log_pi, log_sigma, mu = self.forward(x, lengths)
+        sigma, mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return mu, sigma
+
 
 class MDN(BaseModel):
-    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0, num_gaussians=8):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=1, dropout=0.0,
+            num_gaussians=8, dim_wise=False):
         super(MDN, self).__init__()
         model = [nn.Linear(in_dim, hidden_dim), nn.ReLU()]
         if num_layers > 1:
             for _ in range(num_layers - 1):
                 model += [nn.Linear(hidden_dim, hidden_dim), nn.ReLU()]
-        model += [MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)]
+        model += [MDNLayer(hidden_dim, out_dim, num_gaussians, dim_wise)]
         self.model = nn.Sequential(*model)
 
     def prediction_type(self):
@@ -212,12 +219,19 @@ class MDN(BaseModel):
     def forward(self, x, lengths=None):
         return self.model(x)
 
-class Conv1dResnetMDN(nn.Module):
-    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=4, dropout=0.0, num_gaussians=8):
+    def inference(self, x, lengths=None):
+        log_pi, log_sigma, mu = self.forward(x, lengths)
+        sigma, mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return mu, sigma
+
+
+class Conv1dResnetMDN(BaseModel):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=4, dropout=0.0,
+            num_gaussians=8, dim_wise=False):
         super().__init__()
         model = [Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout),
                  nn.ReLU(),
-                 MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)]
+                 MDNLayer(hidden_dim, out_dim, num_gaussians, dim_wise)]
         self.model = nn.Sequential(*model)
 
     def prediction_type(self):
@@ -225,6 +239,11 @@ class Conv1dResnetMDN(nn.Module):
 
     def forward(self, x, lengths=None):
         return self.model(x)
+
+    def inference(self, x, lengths=None):
+        log_pi, log_sigma, mu = self.forward(x, lengths)
+        sigma, mu = mdn_get_most_probable_sigma_and_mu(log_pi, log_sigma, mu)
+        return mu, sigma
     
 class MDNSAR(MDN):
     """MDN with shallow AR structure
