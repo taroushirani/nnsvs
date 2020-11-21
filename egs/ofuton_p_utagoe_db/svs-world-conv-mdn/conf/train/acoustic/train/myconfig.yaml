@@ -1,7 +1,7 @@
 # @package _group_
 
 out_dir: exp
-nepochs: 200
+nepochs: 100
 checkpoint_epoch_interval: 20
 
 stream_wise_loss: false
