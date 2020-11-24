@@ -15,6 +15,7 @@ netG:
   dropout: 0.5
   num_gaussians: 4
   dim_wise: true
+  noise_amp: 0.5
   
   stream_sizes: [1, 59, 1, 59, 1, 59, 3, 1, 15]
   ar_orders: [200, 20, 200, 20, 200, 20, 200, 20, 20]

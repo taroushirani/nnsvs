@@ -103,7 +103,7 @@ class SARFilter(TrTimeInvFIRFilter):
         fixed_0th (bool): fix the first filt coef to 1 or not.
         dropout (float): dropout ratio
     """
-    def __init__(self, channels, filt_dim, causal=True, tanh=True, fixed_0th=True, dropout=0.5):
+    def __init__(self, channels, filt_dim, causal=True, tanh=True, fixed_0th=True, noise_amp=0.5):
         # Initilize filt coef with small random values
         init_filt_coef = torch.randn(filt_dim) * (1.0 / filt_dim)
                                                   
@@ -111,12 +111,11 @@ class SARFilter(TrTimeInvFIRFilter):
         self.weight.data[:, :, :] = init_filt_coef.flip(0)
         self.weight.requires_grad = True
         self.filt_dim = filt_dim
-        self.dropout = nn.Dropout(dropout)
+        self.noise_amp = noise_amp
         
     def forward(self, x):
-        b = self.dropout(self.get_filt_coefs())
-        if self.fixed_0th:
-            b[:, :, -1] = 1
+        b = self.get_filt_coefs()
+        x += noise_amp * torch.randn(x.shape)
             
         out = F.conv1d(
             x, b, self.bias, self.stride, self.padding, self.dilation, self.groups)
