@@ -115,7 +115,7 @@ class SARFilter(TrTimeInvFIRFilter):
         
     def forward(self, x):
         b = self.get_filt_coefs()
-        x += noise_amp * torch.randn(x.shape)
+        x += self.noise_amp * torch.randn(x.shape)
             
         out = F.conv1d(
             x, b, self.bias, self.stride, self.padding, self.dilation, self.groups)
