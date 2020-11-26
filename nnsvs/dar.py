@@ -64,9 +64,9 @@ class MDNDAR(nn.Module):
         B, T, _ = x.shape
         hidden = torch.zeros(B, self.hidden_dim, device=x.device)
         
-        log_pi = torch.Tensor()
-        log_sigma = torch.Tensor()
-        mu = torch.Tensor()
+        log_pi = torch.Tensor(device=x.device)
+        log_sigma = torch.Tensor(device=x.device)
+        mu = torch.Tensor(device=x.device)
         
         for idx in range(T):
             if idx == 0:
