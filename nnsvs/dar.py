@@ -87,7 +87,6 @@ class MDNDAR(nn.Module):
         mu = torch.Tensor().to(x.device)
         
         for idx in range(T):
-            print(f"idx: {idx}")
             if idx == 0:
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
