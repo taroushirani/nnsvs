@@ -64,35 +64,38 @@ class MDNDAR(nn.Module):
         B, T, _ = x.shape
         hidden = torch.zeros(B, self.hidden_dim, device=x.device)
         
-        log_pi = torch.Tensor(device=x.device)
-        log_sigma = torch.Tensor(device=x.device)
-        mu = torch.Tensor(device=x.device)
+        log_pi = []
+        log_sigma = []
+        mu = []
         
         for idx in range(T):
             if idx == 0:
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
-                inputs = torch.cat((x[:,idx,:], self.dropout(mu[:, idx-1, :])), dim=1)
+                inputs = torch.cat((x[:,idx,:], self.dropout(mu[idx-1])), dim=1)
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
             print(f"_lp.shape: {_lp.shape}")
             
-            log_pi = torch.cat((log_pi, _lp), dim=1)
-            log_sigma = torch.cat((log_sigma, _ls), dim=1)
-            mu = torch.cat((mu, _m), dim=1)
+            log_pi = log_pi.append(_lp)
+            log_sigma = log_sigma.append(_ls)
+            mu = mu.append(_m)
 
+        log_pi = torch.cat(log_pi, dim=1)
+        log_sigma = torch.cat(log_simga, dim=1)
+        mu = torch.cat(log_mu, dim=1)
         # B, T, G
         print(f"log_pi.shape: {log_pi.shape}")
-        log_pi = log_pi.view(B, T, self.out_dim)
-        print(f"log_pi.shape: {log_pi.shape}")
+        #log_pi = log_pi.view(B, T, self.out_dim)
+        #print(f"log_pi.shape: {log_pi.shape}")
         
         # B, T, G, D_out
         print(f"log_sigma.shape: {log_sigma.shape}")        
-        log_sigma = log_pi.view(B, T, self.num_gaussians, self.out_dim)
-        print(f"log_sigma.shape: {log_sigma.shape}")        
+        #log_sigma = log_pi.view(B, T, self.num_gaussians, self.out_dim)
+        #print(f"log_sigma.shape: {log_sigma.shape}")        
         
         # B, T, G, D_out
         print(f"log_mu.shape: {log_mu.shape}")                
-        mu = mu.view(B, T, self.num_gaussians, self.out_dim)
-        print(f"log_mu.shape: {log_mu.shape}")                
+        #mu = mu.view(B, T, self.num_gaussians, self.out_dim)
+        #print(f"log_mu.shape: {log_mu.shape}")                
         
         return log_pi, log_sigma, mu
