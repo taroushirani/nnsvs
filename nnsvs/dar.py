@@ -65,7 +65,7 @@ class MDNDAR(nn.Module):
         mu = torch.Tensor()
         
         for idx in range(T):
-            if idx == 1:
+            if idx == 0:
                 inputs = torch.cat(x[:,idx,:], torch.zeros((B, self.out_dim)), dim=1)
             else:
                 inputs = torch.cat(x[:,idx,:], self.dropout(mu[:, idx-1, :])), dim=1)
