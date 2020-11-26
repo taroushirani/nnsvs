@@ -94,7 +94,7 @@ class MDNDAR(nn.Module):
         #print(f"log_sigma.shape: {log_sigma.shape}")        
         
         # B, T, G, D_out
-        print(f"log_mu.shape: {log_mu.shape}")                
+        print(f"mu.shape: {mu.shape}")                
         #mu = mu.view(B, T, self.num_gaussians, self.out_dim)
         #print(f"log_mu.shape: {log_mu.shape}")                
         
