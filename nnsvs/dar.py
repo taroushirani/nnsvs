@@ -64,16 +64,16 @@ class MDNDAR(nn.Module):
         B, T, _ = x.shape
         hidden = torch.zeros(B, self.hidden_dim, device=x.device)
         
-        log_pi = []
-        log_sigma = []
-        mu = []
+        log_pi = torch.Tensor().to(x.device)
+        log_sigma = torch.Tensor().to(x.device)
+        mu = torch.Tensor().to(x.device)
         
         for idx in range(T):
             if idx == 0:
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
-                print(f"idx: {idx}, mu[idx-1].shape: {mu[idx-1].shape}")
-                inputs = torch.cat((x[:,idx,:], self.dropout(mu[idx-1])), dim=1)
+                print(f"idx: {idx}, mu[idx-1].shape: {mu[:,idx-1:,].shape}")
+                inputs = torch.cat((x[:,idx,:], self.dropout(mu[:,idx-1,:])), dim=1)
                 
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
             print(f"_lp.shape: {_lp.shape}")
