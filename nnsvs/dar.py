@@ -77,11 +77,13 @@ class MDNDAR(nn.Module):
                 
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
             print(f"_lp.shape: {_lp.shape}")
+            print(f"_ls.shape: {_ls.shape}")
+            print(f"_m.shape: {_m.shape}")
             
             log_pi = log_pi.append(_lp)
             log_sigma = log_sigma.append(_ls)
             mu = mu.append(_m)
-
+            print(f"len(mu): {len(mu)}")
         log_pi = torch.cat(log_pi, dim=1)
         log_sigma = torch.cat(log_simga, dim=1)
         mu = torch.cat(log_mu, dim=1)
