@@ -70,9 +70,6 @@ class MDNDAR(nn.Module):
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
                 _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:], log_sigma[:,idx-1:idx,:], mu[:,idx-1:idx,:])
-                print(f"x[:,idx,:].shape: {x[:,idx,:].shape}")
-                print(f"idx: {idx}, prev_mu.shape: {prev_mu.shape}")
-                
                 # B, 1, D_out -> B, D_out
                 prev_mu = prev_mu.squeeze(1)
                 inputs = torch.cat((x[:,idx,:], self.dropout(prev_mu)), dim=1)
