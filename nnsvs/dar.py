@@ -57,7 +57,7 @@ class MDNDAR(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.mdndarcell = MDNDARCell(in_dim, hidden_dim, out_dim, num_gaussians)
 
-    def forward(self, x, lengths):
+    def forward(self, x, lengths=None):
 
         print(f"x.shape: {x.shape}")
         

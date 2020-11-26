@@ -226,4 +226,4 @@ class Conv1dResnetMDNDAR(BaseModel):
         return PredictionType.PROBABILISTIC
 
     def forward(self, x, lengths=None):
-        return self.model(x, lengths)
+        return self.model((x, length))
