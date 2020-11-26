@@ -78,7 +78,7 @@ class MDNDAR(nn.Module):
             torch.Tensor: Tensor of shape (B, T, G, D_out)
                 mean of each Gaussians
         """
-        
+        print(f"x.shape: {x.shape}")
         B, T, _ = x.shape
         hidden = torch.zeros(B, self.hidden_dim, device=x.device)
         
