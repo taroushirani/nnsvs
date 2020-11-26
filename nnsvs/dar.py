@@ -3,7 +3,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from nnsvs.mdn import MDNLayer
+from nnsvs.mdn import MDNLayer, mdn_get_most_probable_sigma_and_mu
 
 class MDNDARCell(nn.Module):
     """ Cell of Deep Autoregressive model with Mixture Density Network.
