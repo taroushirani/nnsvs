@@ -217,21 +217,13 @@ class Conv1dResnetMDNDAR(BaseModel):
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers=4, dropout=0.2,
             num_gaussians=8, dim_wise=False):
         super().__init__()
-        self.conv1dresnet = Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout)
-        self.relu = nn.ReLU()
-        self.mdndar = MDNDAR(hidden_dim, hidden_dim, out_dim, dropout, num_gaussians)
+        model = [Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout),
+                 nn.ReLU(),
+                 MDNDAR(hidden_dim, hidden_dim, out_dim, dropout, num_gaussians)]
+        self.model = nn.Sequential(*model)
 
     def prediction_type(self):
         return PredictionType.PROBABILISTIC
 
     def forward(self, x, lengths=None):
-        out = self.relu(self.conv1dresnet(x))
-        print(f"out.shape: {out.shape}")
-        
-        log_pi, log_sigma, mu = self.mdndar(out, lengths)
-        
-        print(f"log_pi.shape: {log_pi.shape}")
-        print(f"log_sigma.shape: {log_sigma.shape}")
-        print(f"log_mu.shape: {log_mu.shape}")
-        
-        return log_pi, log_sigma, mu
+        return self.model(x)

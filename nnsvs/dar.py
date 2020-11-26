@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from nnsvs.mdn import MDNLayer
 
 class MDNDARCell(nn.Module):
-    """ Cell of Deep Autoregressive model with Mixture Density Networ.
+    """ Cell of Deep Autoregressive model with Mixture Density Network.
 
     Attributes:
         in_dim (int): the number of dimensions of the input
@@ -25,7 +25,7 @@ class MDNDARCell(nn.Module):
     def forward(self, x, hidden):
         print(f"x.shape: {x.shape}")
         h = self.rnncell(x, hidden)
-        out = nn.linear(h)
+        out = nn.Linear(h)
         print(f"out.shape: {out.shape}")
 
         # B, hidden_dim -> B, 1, hidden_dim
