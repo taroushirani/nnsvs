@@ -72,7 +72,9 @@ class MDNDAR(nn.Module):
             if idx == 0:
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
+                print(f"mu[idx-1].shape: {mu[idex-1].shape}")
                 inputs = torch.cat((x[:,idx,:], self.dropout(mu[idx-1])), dim=1)
+                
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
             print(f"_lp.shape: {_lp.shape}")
             
