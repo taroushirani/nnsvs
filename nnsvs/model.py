@@ -219,7 +219,7 @@ class Conv1dResnetMDNDAR(BaseModel):
         super().__init__()
         self.conv1dresnet = Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout)
         self.relu = nn.ReLU()
-        self.mdndar = MDNDAR(in_dim, hidden_dim, out_dim, dropout, num_gaussians)
+        self.mdndar = MDNDAR(hidden_dim, hidden_dim, out_dim, dropout, num_gaussians)
 
     def prediction_type(self):
         return PredictionType.PROBABILISTIC
