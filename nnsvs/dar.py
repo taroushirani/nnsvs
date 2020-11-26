@@ -24,11 +24,15 @@ class MDNDARCell(nn.Module):
         
     def forward(self, x, hidden):
         print(f"x.shape: {x.shape}")
-        out, h = self.rnncell(x, hidden)
-        out = nn.linear(out)
+        h = self.rnncell(x, hidden)
+        out = nn.linear(h)
         print(f"out.shape: {out.shape}")
-        
-        out = self.mdnlayer(out.unsqueeze(1))
+
+        # B, hidden_dim -> B, 1, hidden_dim
+        print(f"out.shape: {out.shape}")
+        out = out.unsqueeze(1)
+        print(f"out.shape: {out.shape}")
+        out = self.mdnlayer(out)
         return out, h
         
 class MDNDAR(nn.Module):
