@@ -58,7 +58,7 @@ class MDNDAR(nn.Module):
         print(f"x.shape: {x.shape}")
         
         B, T, _ = x.shape
-        hidden = torchs.zeros(self.hidden_dim)
+        hidden = torch.zeros(self.hidden_dim)
         
         log_pi = torch.Tensor()
         log_sigma = torch.Tensor()
