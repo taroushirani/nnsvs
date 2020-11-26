@@ -68,9 +68,9 @@ class MDNDAR(nn.Module):
             else:
                 inputs = torch.cat(x[:,idx,:], self.dropout(mu[:, idx-1, :]), dim=1)
                 _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
-                log_pi = torch.cat((log_pi, _lp))
-                log_sigma = torch.cat((log_sigma, _ls))
-                mu = torch.cat((mu, _m))
+                log_pi = torch.cat((log_pi, _lp), dim=1)
+                log_sigma = torch.cat((log_sigma, _ls), dim=1)
+                mu = torch.cat((mu, _m), dim=1)
 
         # B, T, G
         print(f"log_pi.shape: {log_pi.shape}")
