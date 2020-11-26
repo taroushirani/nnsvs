@@ -32,8 +32,8 @@ class MDNDARCell(nn.Module):
         print(f"out.shape: {out.shape}")
         out = out.unsqueeze(1)
         print(f"out.shape: {out.shape}")
-        out = self.mdnlayer(out)
-        return out, h
+        log_pi, log_sigma, mu = self.mdnlayer(out)
+        return log_pi, log_sigma, mu, h
         
 class MDNDAR(nn.Module):
     """ Deep Autoregressive model with Mixture Density Networ
