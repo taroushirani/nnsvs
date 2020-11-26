@@ -46,7 +46,7 @@ class MDNDAR(nn.Module):
         super(MDNDAR, self).__init__()
         self.hidden_dim = hidden_dim
         self.out_dim = out_dim
-        self.num_gaussians=num_gaussians]
+        self.num_gaussians=num_gaussians
         self.dropout = nn.Dropout(dropout)
         self.mdndarcell = MDNDARCell(in_dim, hidden_dim, num_gaussians=num_gaussians)
 
