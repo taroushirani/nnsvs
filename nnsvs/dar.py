@@ -28,7 +28,7 @@ class MDNDARCell(nn.Module):
         out = nn.linear(out)
         print(f"out.shape: {out.shape}")
         
-        out = self.mdnlayer(self.linear(out))
+        out = self.mdnlayer(out.unsqueeze(1))
         return out, h
         
 class MDNDAR(nn.Module):
@@ -68,7 +68,7 @@ class MDNDAR(nn.Module):
             if idx == 0:
                 inputs = torch.cat(x[:,idx,:], torch.zeros((B, self.out_dim)), dim=1)
             else:
-                inputs = torch.cat(x[:,idx,:], self.dropout(mu[:, idx-1, :])), dim=1)
+                inputs = torch.cat(x[:,idx,:], self.dropout(mu[:, idx-1, :]), dim=1)
                 _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
                 print(f"_lp.shape: {_lp.shape}")
                                    
