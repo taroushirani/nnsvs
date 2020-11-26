@@ -11,7 +11,7 @@ from nnsvs.base import BaseModel, PredictionType
 from nnsvs.mdn import MDNLayer
 from nnsvs.dsp import TrTimeInvFIRFilter
 from nnsvs.multistream import split_streams
-
+from nnsvs.dar import MDNDAR
 
 def WNConv1d(*args, **kwargs):
     return weight_norm(nn.Conv1d(*args, **kwargs))
@@ -212,3 +212,33 @@ class MDN(BaseModel):
 
     def forward(self, x, lengths=None):
         return self.model(x)
+
+class Conv1dResnetMDNDAR(BaseModel):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=4, dropout=0.2,
+            num_gaussians=8, dim_wise=False):
+        super().__init__()
+        self.conv1dresnet = Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout)
+        self.relu = nn.ReLU()
+        self.mdndar = MDNDAR(in_dim, hidden_dim, out_dim, dropout, num_gaussians)
+
+    def prediction_type(self):
+        return PredictionType.PROBABILISTIC
+
+    def forward(self, x, lengths=None):
+        out = self.relu(self.conv1dresnet(x))
+        print(f"out.shape: {out.shape}")
+        
+        out = pack_padded_sequence(out, lengths, batch_first=True)
+        print(f"out.shape: {out.shape}")
+        
+        log_pi, log_sigma, mu = self.mdndar(out)
+        
+        log_pi, _ = pad_packed_sequence(log_pi, batch_first=True)
+        log_sigma, _ = pad_packed_sequence(log_sigma, batch_first=True)        
+        mu, _ = pad_packed_sequence(mu, batch_first=True)
+
+        print(f"log_pi.shape: {log_pi.shape}")
+        print(f"log_sigma.shape: {log_sigma.shape}")
+        print(f"log_mu.shape: {log_mu.shape}")
+        
+        return log_pi, log_sigma, mu
