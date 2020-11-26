@@ -48,7 +48,7 @@ class MDNDAR(nn.Module):
         self.out_dim = out_dim
         self.num_gaussians=num_gaussians
         self.dropout = nn.Dropout(dropout)
-        self.mdndarcell = MDNDARCell(in_dim, hidden_dim, num_gaussians=num_gaussians)
+        self.mdndarcell = MDNDARCell(in_dim, hidden_dim, out_dim, num_gaussians)
 
     def forward(self, sequence, length):
         print(f"sequence.shape: {sequence.shape}")
