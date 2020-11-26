@@ -14,13 +14,13 @@ class MDNDARCell(nn.Module):
         out_dim (int): the number of dimensions of the output
         num_gaussians (int): the number of Gaussians component
     """    
-    def __init__(self, in_dim, hidden_dim, out_dim, num_gaussians=8):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_gaussians=8, dim_wise=False):
         super(MDNDARCell, self).__init__()
         
         #B, D_in
         self.rnncell = nn.RNNCell(in_dim + out_dim, hidden_dim)
         self.linear = nn.Linear(hidden_dim, hidden_dim)
-        self.mdnlayer = MDNLayer(hidden_dim, out_dim, num_gaussians=num_gaussians)
+        self.mdnlayer = MDNLayer(hidden_dim, out_dim, num_gaussians, dim_wise)
         
     def forward(self, x, hidden):
         print(f"x.shape: {x.shape}")
@@ -49,13 +49,13 @@ class MDNDAR(nn.Module):
         num_gaussians (int): the number of Gaussians component
     """
 
-    def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.2, num_gaussians=8):
+    def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.2, num_gaussians=8, dim_wise=False):
         super(MDNDAR, self).__init__()
         self.hidden_dim = hidden_dim
         self.out_dim = out_dim
         self.num_gaussians=num_gaussians
         self.dropout = nn.Dropout(dropout)
-        self.mdndarcell = MDNDARCell(in_dim, hidden_dim, out_dim, num_gaussians)
+        self.mdndarcell = MDNDARCell(in_dim, hidden_dim, out_dim, num_gaussians, dim_wise)
 
     def forward(self, x, lengths=None):
 
@@ -72,21 +72,20 @@ class MDNDAR(nn.Module):
             if idx == 0:
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
-                print(f"idx: {idx}, mu[idx-1].shape: {mu[:,idx-1:,].shape}")
-                inputs = torch.cat((x[:,idx,:], self.dropout(mu[:,idx-1,:])), dim=1)
+                _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:], log_sigma[:,idx-1:idx,:], mu[:,idx-1:idx,:])
+                print(f"idx: {idx}, prev_mu.shape: {prev_mu.shape}")
+                
+                inputs = torch.cat((x[:,idx,:], self.dropout(prev_mu)), dim=1)
                 
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
             print(f"_lp.shape: {_lp.shape}")
             print(f"_ls.shape: {_ls.shape}")
             print(f"_m.shape: {_m.shape}")
             
-            log_pi = log_pi.append(_lp)
-            log_sigma = log_sigma.append(_ls)
-            mu = mu.append(_m)
-            print(f"len(mu): {len(mu)}")
-        log_pi = torch.cat(log_pi, dim=1)
-        log_sigma = torch.cat(log_simga, dim=1)
-        mu = torch.cat(log_mu, dim=1)
+            log_pi = torch.cat((log_pi, _lp), dim=1)
+            log_sigma = torch.cat((log_sigma, _ls), dim=1)
+            mu = torch.cat((mu, _m), dim=1)
+                                   
         # B, T, G
         print(f"log_pi.shape: {log_pi.shape}")
         #log_pi = log_pi.view(B, T, self.out_dim)

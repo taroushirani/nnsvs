@@ -252,7 +252,7 @@ class Conv1dResnetMDNDAR(BaseModel):
         super().__init__()
         model = [Conv1dResnet(in_dim, hidden_dim, hidden_dim, num_layers, dropout),
                  nn.ReLU(),
-                 MDNDAR(hidden_dim, hidden_dim, out_dim, dropout, num_gaussians)]
+                 MDNDAR(hidden_dim, hidden_dim, out_dim, dropout, num_gaussians, dim_wise)]
         self.model = nn.Sequential(*model)
 
     def prediction_type(self):
