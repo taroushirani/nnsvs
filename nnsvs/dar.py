@@ -37,6 +37,14 @@ class MDNDAR(nn.Module):
 
     The input maps to the parameters of a Mixture of Gaussians (MoG) probability
     distribution, where each Gaussian has out_dim dimensions and diagonal covariance.
+    If dim_wise is True, features for each dimension are modeld by independent 1-D GMMs
+    instead of modeling jointly. This would workaround training difficulty
+    especially for high dimensional data.
+
+    The previous mu(mean) of MDNDARCell is concatinated with the input and re-used.
+
+    Implementation reference:
+        1. https://ieeexplore.ieee.org/document/8341752
 
     Attributes:
         in_dim (int): the number of dimensions of the input
@@ -55,8 +63,21 @@ class MDNDAR(nn.Module):
         self.mdndarcell = MDNDARCell(in_dim, hidden_dim, out_dim, num_gaussians, dim_wise)
 
     def forward(self, x, lengths=None):
+        """Forward for MDNDAR
 
-        print(f"x.shape: {x.shape}")
+        Args:
+            minibatch (torch.Tensor): tensor of shape (B, T, D_in)
+                B is the batch size and T is data lengths of this batch,
+                and D_in is in_dim.
+
+        Returns:
+            torch.Tensor: Tensor of shape (B, T, G) or (B, T, G, D_out)
+                Log of mixture weights. G is num_gaussians and D_out is out_dim.
+            torch.Tensor: Tensor of shape (B, T, G, D_out)
+                the log of standard deviation of each Gaussians.
+            torch.Tensor: Tensor of shape (B, T, G, D_out)
+                mean of each Gaussians
+        """
         
         B, T, _ = x.shape
         hidden = torch.zeros(B, self.hidden_dim, device=x.device)
@@ -69,8 +90,13 @@ class MDNDAR(nn.Module):
             if idx == 0:
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
-                _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:], log_sigma[:,idx-1:idx,:], mu[:,idx-1:idx,:])
-                # B, 1, D_out -> B, D_out
+                if len(log_pi.shape) == 4:
+                    # (B, 1, G, D_out), (B, 1, G, D_out), (B, 1, G, D_out) -> (B, 1, D_out)
+                    _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:,:], log_sigma[:,idx-1:idx,:,:], mu[:,idx-1:idx,:,:])                    
+                else:
+                    # (B, 1, G), (B, 1, G, D_out), (B, 1, G, D_out) -> (B, 1, D_out)
+                    _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:], log_sigma[:,idx-1:idx,:,:], mu[:,idx-1:idx,:,:])                    
+                    # B, 1, D_out -> B, D_out
                 prev_mu = prev_mu.squeeze(1)
                 inputs = torch.cat((x[:,idx,:], self.dropout(prev_mu)), dim=1)
                 
@@ -79,20 +105,5 @@ class MDNDAR(nn.Module):
             log_pi = torch.cat((log_pi, _lp), dim=1)
             log_sigma = torch.cat((log_sigma, _ls), dim=1)
             mu = torch.cat((mu, _m), dim=1)
-                                   
-        # B, T, G
-        print(f"log_pi.shape: {log_pi.shape}")
-        #log_pi = log_pi.view(B, T, self.out_dim)
-        #print(f"log_pi.shape: {log_pi.shape}")
-        
-        # B, T, G, D_out
-        print(f"log_sigma.shape: {log_sigma.shape}")        
-        #log_sigma = log_pi.view(B, T, self.num_gaussians, self.out_dim)
-        #print(f"log_sigma.shape: {log_sigma.shape}")        
-        
-        # B, T, G, D_out
-        print(f"mu.shape: {mu.shape}")                
-        #mu = mu.view(B, T, self.num_gaussians, self.out_dim)
-        #print(f"log_mu.shape: {log_mu.shape}")                
-        
+                                           
         return log_pi, log_sigma, mu
