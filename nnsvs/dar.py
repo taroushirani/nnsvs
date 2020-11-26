@@ -64,9 +64,9 @@ class MDNDAR(nn.Module):
         
         for idx in range(T):
             if idx == 1:
-                inputs = torch.cat(sequence[idx], torch.zeros(self.out_dim))
+                inputs = torch.cat(x[:,idx,:], torch.zeros((B, self.out_dim), dim=1)
             else:
-                inputs = torch.cat(sequence[idx], self.dropout(mu[idx-1]))
+                inputs = torch.cat(x[:,idx,:], self.dropout(mu[:, idx-1, :]), dim=1)
                 _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
                 log_pi = torch.cat((log_pi, _lp))
                 log_sigma = torch.cat((log_sigma, _ls))
