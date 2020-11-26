@@ -228,7 +228,7 @@ class Conv1dResnetMDNDAR(BaseModel):
         out = self.relu(self.conv1dresnet(x))
         print(f"out.shape: {out.shape}")
         
-        log_pi, log_sigma, mu = self.mdndar(out)
+        log_pi, log_sigma, mu = self.mdndar(out, length)
         
         print(f"log_pi.shape: {log_pi.shape}")
         print(f"log_sigma.shape: {log_sigma.shape}")
