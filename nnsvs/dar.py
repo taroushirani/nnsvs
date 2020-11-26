@@ -23,15 +23,12 @@ class MDNDARCell(nn.Module):
         self.mdnlayer = MDNLayer(hidden_dim, out_dim, num_gaussians, dim_wise)
         
     def forward(self, x, hidden):
-        print(f"x.shape: {x.shape}")
         h = self.rnncell(x, hidden)
         out = self.linear(h)
-        print(f"out.shape: {out.shape}")
 
         # B, hidden_dim -> B, 1, hidden_dim
-        print(f"out.shape: {out.shape}")
         out = out.unsqueeze(1)
-        print(f"out.shape: {out.shape}")
+        
         log_pi, log_sigma, mu = self.mdnlayer(out)
         return log_pi, log_sigma, mu, h
         
@@ -73,14 +70,14 @@ class MDNDAR(nn.Module):
                 inputs = torch.cat((x[:,idx,:], torch.zeros(B, self.out_dim, device=x.device)), dim=1)
             else:
                 _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:], log_sigma[:,idx-1:idx,:], mu[:,idx-1:idx,:])
+                print(f"x[:,idx,:].shape: {x[:,idx,:].shape}")
                 print(f"idx: {idx}, prev_mu.shape: {prev_mu.shape}")
                 
+                # B, 1, D_out -> B, D_out
+                prev_mu = prev_mu.squeeze(1)
                 inputs = torch.cat((x[:,idx,:], self.dropout(prev_mu)), dim=1)
                 
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
-            print(f"_lp.shape: {_lp.shape}")
-            print(f"_ls.shape: {_ls.shape}")
-            print(f"_m.shape: {_m.shape}")
             
             log_pi = torch.cat((log_pi, _lp), dim=1)
             log_sigma = torch.cat((log_sigma, _ls), dim=1)
