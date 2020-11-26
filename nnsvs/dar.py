@@ -25,7 +25,7 @@ class MDNDARCell(nn.Module):
     def forward(self, x, hidden):
         print(f"x.shape: {x.shape}")
         h = self.rnncell(x, hidden)
-        out = nn.Linear(h)
+        out = self.linear(h)
         print(f"out.shape: {out.shape}")
 
         # B, hidden_dim -> B, 1, hidden_dim
