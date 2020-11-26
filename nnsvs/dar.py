@@ -50,10 +50,11 @@ class MDNDAR(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.mdndarcell = MDNDARCell(in_dim, hidden_dim, out_dim, num_gaussians)
 
-    def forward(self, sequence, length):
-        print(f"sequence.shape: {sequence.shape}")
+    def forward(self, x, length):
 
-        B, T, _ = sequence.shape
+        print(f"x.shape: {x.shape}")
+        
+        B, T, _ = x.shape
         hidden = torchs.zeros(self.hidden_dim)
         
         log_pi = torch.Tensor()
@@ -62,13 +63,13 @@ class MDNDAR(nn.Module):
         
         for idx in range(T):
             if idx == 1:
-                x = torch.cat(sequence[idx], torch.zeros(self.out_dim))
+                inputs = torch.cat(sequence[idx], torch.zeros(self.out_dim))
             else:
-                x = torch.cat(sequence[idx], self.dropout(mu[idx-1]))
-            _lp, _ls, _m, hidden = self.mdndarcell(x, hidden)
-            log_pi = torch.cat((log_pi, _lp))
-            log_sigma = torch.cat((log_sigma, _ls))
-            mu = torch.cat((mu, _m))
+                inputs = torch.cat(sequence[idx], self.dropout(mu[idx-1]))
+                _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
+                log_pi = torch.cat((log_pi, _lp))
+                log_sigma = torch.cat((log_sigma, _ls))
+                mu = torch.cat((mu, _m))
 
         # B, T, G
         print(f"log_pi.shape: {log_pi.shape}")

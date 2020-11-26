@@ -228,15 +228,8 @@ class Conv1dResnetMDNDAR(BaseModel):
         out = self.relu(self.conv1dresnet(x))
         print(f"out.shape: {out.shape}")
         
-        out = pack_padded_sequence(out, lengths, batch_first=True)
-        print(f"out.shape: {out.shape}")
-        
         log_pi, log_sigma, mu = self.mdndar(out)
         
-        log_pi, _ = pad_packed_sequence(log_pi, batch_first=True)
-        log_sigma, _ = pad_packed_sequence(log_sigma, batch_first=True)        
-        mu, _ = pad_packed_sequence(mu, batch_first=True)
-
         print(f"log_pi.shape: {log_pi.shape}")
         print(f"log_sigma.shape: {log_sigma.shape}")
         print(f"log_mu.shape: {log_mu.shape}")
