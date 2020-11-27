@@ -99,7 +99,7 @@ class MDNDAR(nn.Module):
 
                 # Disable autograd    
                 # B, 1, D_out -> B, D_out
-                prev_mu = prev_mu.squeeze(1).requires_grad_(False)
+                prev_mu = prev_mu.squeeze(1).detach()
                 inputs = torch.cat((x[:,idx,:], self.dropout(prev_mu)), dim=1)
                 
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
