@@ -95,9 +95,11 @@ class MDNDAR(nn.Module):
                     _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:,:], log_sigma[:,idx-1:idx,:,:], mu[:,idx-1:idx,:,:])                    
                 else:
                     # (B, 1, G), (B, 1, G, D_out), (B, 1, G, D_out) -> (B, 1, D_out)
-                    _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:], log_sigma[:,idx-1:idx,:,:], mu[:,idx-1:idx,:,:])                    
-                    # B, 1, D_out -> B, D_out
-                prev_mu = prev_mu.squeeze(1)
+                    _, prev_mu = mdn_get_most_probable_sigma_and_mu(log_pi[:,idx-1:idx,:], log_sigma[:,idx-1:idx,:,:], mu[:,idx-1:idx,:,:])
+
+                # Disable autograd    
+                # B, 1, D_out -> B, D_out
+                prev_mu = prev_mu.squeeze(1).requires_grad_(False)
                 inputs = torch.cat((x[:,idx,:], self.dropout(prev_mu)), dim=1)
                 
             _lp, _ls, _m, hidden = self.mdndarcell(inputs, hidden)
