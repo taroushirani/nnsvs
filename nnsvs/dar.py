@@ -18,12 +18,14 @@ class MDNDARCell(nn.Module):
         super(MDNDARCell, self).__init__()
         
         #B, D_in
-        self.rnncell = nn.RNNCell(in_dim + out_dim, hidden_dim)
+#        self.rnncell = nn.RNNCell(in_dim + out_dim, hidden_dim)
+        self.rnncell = nn.Linear(in_dim + out_dim, hidden_dim)
         self.linear = nn.Linear(hidden_dim, hidden_dim)
         self.mdnlayer = MDNLayer(hidden_dim, out_dim, num_gaussians, dim_wise)
         
     def forward(self, x, hidden):
-        h = self.rnncell(x, hidden)
+#        h = self.rnncell(x, hidden)
+        h = self.rnncell(x)
         out = self.linear(h)
 
         # B, hidden_dim -> B, 1, hidden_dim
