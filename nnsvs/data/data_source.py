@@ -98,7 +98,7 @@ class DurationFeatureSource(FileDataSource):
 
 class WORLDAcousticSource(FileDataSource):
     def __init__(self, utt_list, wav_root, label_root, question_path,
-            use_harvest=True, f0_floor=150, f0_ceil=700, frame_period=5,
+            use_harvest=True, d4c_threshold=0.85, f0_floor=150, f0_ceil=700, frame_period=5,
             mgc_order=59, num_windows=3, relative_f0=True,
             interp_unvoiced_aperiodicity=True):
         self.utt_list = utt_list
@@ -108,6 +108,7 @@ class WORLDAcousticSource(FileDataSource):
             question_path, append_hat_for_LL=False)
         self.pitch_idx = len(self.binary_dict) + 1
         self.use_harvest = use_harvest
+        self.d4c_threshold = d4c_threshold
         self.f0_floor = f0_floor
         self.f0_ceil = f0_ceil
         self.frame_period = frame_period
@@ -152,7 +153,7 @@ class WORLDAcousticSource(FileDataSource):
         f0 = np.maximum(f0, 0)
 
         spectrogram = pyworld.cheaptrick(x, f0, timeaxis, fs, f0_floor=min_f0)
-        aperiodicity = pyworld.d4c(x, f0, timeaxis, fs)
+        aperiodicity = pyworld.d4c(x, f0, timeaxis, fs, threshold=self.d4c_threshold)
 
         mgc = pysptk.sp2mc(spectrogram, order=self.mgc_order,
                            alpha=pysptk.util.mcepalpha(fs))

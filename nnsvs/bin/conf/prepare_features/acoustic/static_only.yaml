@@ -15,6 +15,8 @@ f0_ceil: 700
 
 use_harvest: true
 
+d4c_threshold: 0
+
 frame_period: 5 # ms
 mgc_order: 59
 

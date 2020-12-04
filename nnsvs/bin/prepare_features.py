@@ -80,6 +80,7 @@ def my_app(config : DictConfig) -> None:
     out_acoustic_source = WORLDAcousticSource(utt_list,
         to_absolute_path(config.acoustic.wav_dir), to_absolute_path(config.acoustic.label_dir),
         question_path, use_harvest=config.acoustic.use_harvest,
+        d4c_threshold=config.acoustic.d4c_threshold,                                              
         f0_ceil=config.acoustic.f0_ceil, f0_floor=config.acoustic.f0_floor,
         frame_period=config.acoustic.frame_period, mgc_order=config.acoustic.mgc_order,
         num_windows=config.acoustic.num_windows,
