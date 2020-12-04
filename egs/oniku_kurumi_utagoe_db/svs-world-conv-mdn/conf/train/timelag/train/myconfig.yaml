@@ -1,7 +1,7 @@
 # @package _group_
 
 out_dir: exp
-nepochs: 100
+nepochs: 50
 checkpoint_epoch_interval: 20
 
 stream_wise_loss: false
@@ -17,7 +17,7 @@ optim:
   lr_scheduler:
     name: StepLR
     params:
-      step_size: 50
+      step_size: 20
       gamma: 0.5
 
 resume:

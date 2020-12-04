@@ -1,13 +1,13 @@
 ### General settings.
 ## The name of singer
-spk: "ofuton_p"
+spk: "oniku_kurumi"
 
 ## exp tag(for managing experiments)
 tag:
 
 ## Directory of Unzipped singing voice database
 # PLEASE CHANGE THE PATH BASED ON YOUR ENVIRONMENT
-db_root: "~/data/OFUTON_P_UTAGOE_DB/"
+db_root: "~/data/ONIKU_KURUMI_UTAGOE_DB"
 
 ## Output directory
 # All the generated labels, intermediate files, and segmented wav files
@@ -77,7 +77,7 @@ duration_model: duration_mdn
 duration_train: myconfig
 duration_data: myconfig
 
-acoustic_model: acoustic_mdn
+acoustic_model: acoustic_baseline
 acoustic_train: myconfig
 acoustic_data: myconfig
 
