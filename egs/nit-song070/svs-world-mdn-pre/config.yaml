@@ -45,7 +45,7 @@ duration_model: duration_rmdn
 duration_train: myconfig
 duration_data: myconfig
 
-acoustic_model: acoustic_mdn
+acoustic_model: acoustic_rmdn
 acoustic_train: myconfig
 acoustic_data: myconfig
 
