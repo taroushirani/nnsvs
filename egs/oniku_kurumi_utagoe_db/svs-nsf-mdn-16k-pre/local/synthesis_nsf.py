@@ -58,9 +58,6 @@ def get_static_acoustic_features(labels, acoustic_features, acoustic_out_scaler,
 
     # Apply MLPG if necessary
     if np.any(has_dynamic_features):
-        acoustic_features = multi_stream_mlpg(
-            acoustic_features, acoustic_out_scaler.var_, windows, stream_sizes,
-            has_dynamic_features)
         static_stream_sizes = get_static_stream_sizes(
             stream_sizes, has_dynamic_features, len(windows))
     else:
@@ -96,9 +93,9 @@ def get_static_acoustic_features(labels, acoustic_features, acoustic_out_scaler,
     return mgc, f0, bap
     
 def dump_acoustic_features(config, device, label_path, question_path,
-                           timelag_model, timelag_in_scaler, timelag_out_scaler,
-                           duration_model, duration_in_scaler, duration_out_scaler,
-                           acoustic_model, acoustic_in_scaler, acoustic_out_scaler,
+                           timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
+                           duration_model, duration_config, duration_in_scaler, duration_out_scaler,
+                           acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler,
                            out_dir, utt_id):
     # load labels and question
     labels = hts.load(label_path).round_()
@@ -117,20 +114,19 @@ def dump_acoustic_features(config, device, label_path, question_path,
         duration_modified_labels = labels
     else:
         # Time-lag
-        lag = predict_timelag(device, labels, timelag_model, timelag_in_scaler,
+        lag = predict_timelag(device, labels, timelag_model, timelag_config, timelag_in_scaler,
             timelag_out_scaler, binary_dict, continuous_dict, pitch_indices,
             log_f0_conditioning, config.timelag.allowed_range)
 
         # Timelag predictions
-        durations = predict_duration(device, labels, duration_model,
-            duration_in_scaler, duration_out_scaler, lag, binary_dict, continuous_dict,
+        durations = predict_duration(device, labels, duration_model, duration_config, duration_in_scaler, duration_out_scaler, lag, binary_dict, continuous_dict,
             pitch_indices, log_f0_conditioning)
 
         # Normalize phoneme durations
         duration_modified_labels = postprocess_duration(labels, durations, lag)
 
     # Predict acoustic features
-    acoustic_features = predict_acoustic(device, duration_modified_labels, acoustic_model,
+    acoustic_features = predict_acoustic(device, duration_modified_labels, acoustic_model, acoustic_config, 
         acoustic_in_scaler, acoustic_out_scaler, binary_dict, continuous_dict,
         config.acoustic.subphone_features, pitch_indices, log_f0_conditioning)
 
@@ -321,9 +317,9 @@ def my_app(config : DictConfig) -> None:
         if not exists(label_path):
             raise RuntimeError(f"Label file does not exist: {label_path}")
         dump_acoustic_features(config, device, label_path, question_path,
-                               timelag_model, timelag_in_scaler, timelag_out_scaler,
-                               duration_model, duration_in_scaler, duration_out_scaler,
-                               acoustic_model, acoustic_in_scaler, acoustic_out_scaler,
+                               timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
+                               duration_model, duration_config, duration_in_scaler, duration_out_scaler,
+                               acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler,
                                out_dir, utt_id)
     synthesis_nsf(config, utt_list, out_dir, out_dir)
 
