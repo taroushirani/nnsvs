@@ -42,6 +42,11 @@ else
     expname=${spk}_${tag}
 fi
 expdir=exp/$expname
+nsf_input_dirs=$expdir/nsf/input_dirs
+nsf_output_dirs=$expdir/nsf/output_dirs
+nsf_test_input_dirs=$expdir/nsf/test_input_dirs
+nsf_test_output_dirs=$expdir/nsf/test_output_dirs
+nsf_save_model_dir=$expdir/nsf/train_outputs
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
     if [ ! -e $db_root ]; then
@@ -97,76 +102,25 @@ fi
 
 if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
     echo "stage 6: Synthesis waveforms"
-    . $NNSVS_COMMON_ROOT/synthesis.sh
+    . $NNSVS_COMMON_ROOT/synthesis_nsf.sh
 fi
 
 if [ ${stage} -le 7 ] && [ ${stop_stage} -ge 7 ]; then
-    if [ ! -e $nsf_root_dir ]; then
-	echo "stage 7: Downloading NSF"
-        mkdir -p downloads
-        cd downloads
-	git clone https://github.com/nii-yamagishilab/project-NN-Pytorch-scripts
-	cd $script_dir
-    fi
+    echo "stage 7: Downloading NSF"
+    . $NNSVS_COMMON_ROOT/download_nsf.sh
 fi
 
 if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
     echo "stage 8: Data preparation for NSF"
-    out_dir=$expdir/nsf
-    mkdir -p $out_dir
-    for s in ${datasets[@]};
-    do
-        if [ $s = $eval_set ]; then
-	    xrun python local/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir test_set=true
-        else
-	    xrun python local/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir
-	fi
-    done
+    . $NNSVS_COMMON_ROOT/prepare_nsf_data.sh
 fi
 
 if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
     echo "stage 9: Training NSF model"
-    if [ ! -e $nsf_root_dir ]; then
-	echo "No NSF files found. Please set nsf_root_dir properly or run stage 7."
-	exit 1
-    fi
-
-    input_dirs=$expdir/nsf/input_dirs
-    output_dirs=$expdir/nsf/output_dirs
-    mkdir -p $output_dirs
-    mkdir -p $nsf_save_model_dir
-    xrun python local/train_nsf.py \
-	 nsf_root_dir=$nsf_root_dir \
-	 nsf_type=hn-sinc-nsf \
-	 nsf.args.batch_size=1 \
-	 nsf.args.epochs=100 \
-	 nsf.args.no_best_epochs=5 \
-	 nsf.args.lr=0.00003 \
-	 nsf.args.save_model_dir=$nsf_save_model_dir \
-	 nsf.args.trained_model=$nsf_pretrained_model \
-	 nsf.model.input_dirs=["$input_dirs","$input_dirs","$input_dirs"]\
-	 nsf.model.output_dirs=["$output_dirs"]
+    . $NNSVS_COMMON_ROOT/train_nsf.sh
 fi
 
 if [ ${stage} -le 10 ] && [ ${stop_stage} -ge 10 ]; then
     echo "stage 10: Evaluating NSF model"
-    if [ ! -e $nsf_root_dir ]; then
-	echo "No NSF files found. Please set nsf_root_dir properly or run stage 7."
-	exit 1
-    fi
-
-    # for inference
-    test_input_dirs=$expdir/nsf/test_input_dirs
-    test_output_dirs=$expdir/nsf/test_output_dirs
-    mkdir -p $test_output_dirs
-    xrun python local/train_nsf.py \
-	 nsf_root_dir=$nsf_root_dir \
-	 nsf_type=hn-sinc-nsf \
-	 nsf.args.batch_size=1 \
-	 nsf.args.save_model_dir=$nsf_save_model_dir \
-	 nsf.args.trained_model=$nsf_pretrained_model \
-	 nsf.args.inference=true \
-	 nsf.model.test_input_dirs=["$test_input_dirs","$test_input_dirs","$test_input_dirs"]\
-	 nsf.model.test_output_dirs=$test_output_dirs
-
+    . $NNSVS_COMMON_ROOT/eval_nsf.sh
 fi
