@@ -117,9 +117,9 @@ if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
     for s in ${datasets[@]};
     do
         if [ $s = $eval_set ]; then
-	    xrun python bin/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir test_set=true
+	    xrun python local/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir test_set=true
         else
-	    xrun python bin/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir
+	    xrun python local/prepare_nsf_data.py in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir
 	fi
     done
 fi
@@ -135,7 +135,7 @@ if [ ${stage} -le 9 ] && [ ${stop_stage} -ge 9 ]; then
     output_dirs=$expdir/nsf/output_dirs
     mkdir -p $output_dirs
     mkdir -p $nsf_save_model_dir
-    xrun python bin/train_nsf.py \
+    xrun python local/train_nsf.py \
 	 nsf_root_dir=$nsf_root_dir \
 	 nsf_type=hn-sinc-nsf \
 	 nsf.args.batch_size=1 \
@@ -159,7 +159,7 @@ if [ ${stage} -le 10 ] && [ ${stop_stage} -ge 10 ]; then
     test_input_dirs=$expdir/nsf/test_input_dirs
     test_output_dirs=$expdir/nsf/test_output_dirs
     mkdir -p $test_output_dirs
-    xrun python bin/train_nsf.py \
+    xrun python local/train_nsf.py \
 	 nsf_root_dir=$nsf_root_dir \
 	 nsf_type=hn-sinc-nsf \
 	 nsf.args.batch_size=1 \
