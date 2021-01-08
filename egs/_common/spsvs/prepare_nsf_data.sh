@@ -12,8 +12,8 @@ mkdir -p $out_dir
 for s in ${datasets[@]};
 do
     if [ $s = $eval_set ]; then
-	xrun nnsvs-prepare-nsf-data $ext in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir test_set=true
+	xrun nnsvs-prepare-nsf-data $ext question_path=$question_path in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir test_set=true
     else
-	xrun nnsvs-prepare-nsf-data $ext in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir
+	xrun nnsvs-prepare-nsf-data $ext question_path=$question_path in_dir=$dump_org_dir/$s/out_acoustic out_dir=$out_dir
     fi
 done

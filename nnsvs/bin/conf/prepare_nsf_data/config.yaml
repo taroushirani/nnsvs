@@ -9,7 +9,7 @@ in_dir:
 out_dir: 
   
 # question path used for timelag, duration and acoustic models
-question_path: conf/jp_qst001_nnsvs.hed
+question_path: 
 label_dir: data/acoustic/label_phone_align
   
 # acoustic parameters
