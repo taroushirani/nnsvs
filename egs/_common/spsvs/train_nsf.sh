@@ -13,6 +13,7 @@ else
 fi
 
 mkdir -p $nsf_output_dirs
+mkdir -p $nsf_save_model_dir
 
 xrun nnsvs-train-nsf $ext \
      nsf_root_dir=$nsf_root_dir \
