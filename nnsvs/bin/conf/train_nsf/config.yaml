@@ -1,4 +1,5 @@
-# coding: utf-8
+# @package _global_
+
 defaults:
   - hydra/job_logging: colorlog
   - hydra/hydra_logging: colorlog
