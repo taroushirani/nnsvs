@@ -171,8 +171,13 @@ def my_app(config : DictConfig) -> None:
             checkpoint = None 
         else:
             checkpoint = torch.load(args.trained_model)
+
+
+        # Save nsf settings
+        with open(join(args.save_model_dir, "config.yaml"), "w") as f:
+            OmegaConf.save(config.nsf, f)
             
-            # start training
+        # start training
         logger.info(f"Start {config.nsf.type} training. This may take several days.")
         nii_nn_wrapper.f_train_wrapper(args, model, 
                                        loss_wrapper, device,

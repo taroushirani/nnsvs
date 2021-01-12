@@ -1,11 +1,6 @@
 # NOTE: the script is supposed to be used called from nnsvs recipes.
 # Please don't try to run the shell script directry.
 
-if [ ! -e $nsf_root_dir ]; then
-    echo "No NSF files found. Please set nsf_root_dir properly or run stage 7."
-    exit 1
-fi
-
 if [ -d conf/synthesis_nsf ]; then
     ext="--config-dir conf/synthesis_nsf"
 else
@@ -33,7 +28,10 @@ for s in ${testsets[@]}; do
 	    rm $nsf_save_model_dir/eval_utt_length.dic
 	fi
         xrun nnsvs-synthesis-nsf $ext \
-	     question_path=conf/jp_qst001_nnsvs.hed \
+	     question_path=conf/$question_path \
+	     timelag=$timelag_synthesis \
+             duration=$duration_synthesis \
+             acoustic=$acoustic_synthesis \
              timelag.checkpoint=$expdir/timelag/$timelag_eval_checkpoint \
              timelag.in_scaler_path=$dump_norm_dir/in_timelag_scaler.joblib \
              timelag.out_scaler_path=$dump_norm_dir/out_timelag_scaler.joblib \
@@ -50,8 +48,6 @@ for s in ${testsets[@]}; do
              in_dir=data/acoustic/$input/ \
              out_dir=$expdir/synthesis/$s/latest/$input \
              ground_truth_duration=$ground_truth_duration \
-	     nsf_root_dir=downloads/project-NN-Pytorch-scripts/ \
-	     nsf.args.save_model_dir=$nsf_save_model_dir
-	
+	     nsf.config=$expdir/nsf/config.yaml 
     done
 done
