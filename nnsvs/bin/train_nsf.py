@@ -19,8 +19,7 @@ def my_app(config : DictConfig) -> None:
     logger.info(config.pretty())
 
     assert config.nsf.root_dir
-    nsf.root_dir = to_absolute_path(config.nsf.root_dir)
-    sys.path.append(nsf.root_dir)
+    sys.path.append(to_absolute_path(config.nsf.root_dir))
     import core_scripts.data_io.default_data_io as nii_dset
     import core_scripts.other_tools.list_tools as nii_list_tool
     import core_scripts.op_manager.op_manager as nii_op_wrapper
