@@ -18,22 +18,22 @@ def my_app(config : DictConfig) -> None:
     logger = getLogger(config.verbose)
     logger.info(config.pretty())
 
-    assert config.nsf_root_dir
-    nsf_root_dir = to_absolute_path(config.nsf_root_dir)
-    sys.path.append(nsf_root_dir)
+    assert config.nsf.root_dir
+    nsf.root_dir = to_absolute_path(config.nsf.root_dir)
+    sys.path.append(nsf.root_dir)
     import core_scripts.data_io.default_data_io as nii_dset
     import core_scripts.other_tools.list_tools as nii_list_tool
     import core_scripts.op_manager.op_manager as nii_op_wrapper
     import core_scripts.nn_manager.nn_manager as nii_nn_wrapper
 
-    if config.nsf_type == "hn-sinc-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/hn-sinc-nsf-9")))
-    elif config.nsf_type == "hn-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/hn-nsf")))
-    elif config.nsf_type == "cyc-noise-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/cyc-noise-nsf-4")))
+    if config.nsf.type == "hn-sinc-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/hn-sinc-nsf-9")))
+    elif config.nsf.type == "hn-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/hn-nsf")))
+    elif config.nsf.type == "cyc-noise-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/cyc-noise-nsf-4")))
     else:
-        raise Exception(f"Unknown NSF type: {config.nsf_type}")
+        raise Exception(f"Unknown NSF type: {config.nsf.type}")
 
     import model as nsf_model
     
@@ -174,7 +174,7 @@ def my_app(config : DictConfig) -> None:
             checkpoint = torch.load(args.trained_model)
             
             # start training
-        logger.info(f"Start {config.nsf_type} training. This may take several days.")
+        logger.info(f"Start {config.nsf.type} training. This may take several days.")
         nii_nn_wrapper.f_train_wrapper(args, model, 
                                        loss_wrapper, device,
                                        optimizer_wrapper,

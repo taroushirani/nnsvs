@@ -102,3 +102,4 @@ acoustic_eval_checkpoint: latest.pth
 ###########################################################
 nsf_root_dir: downloads/project-NN-Pytorch-scripts/
 nsf_pretrained_model: ../../_common/nsf/trained_network_cyc_noise_nsf_cmu_arctic_corpus_20200815.pt
+nsf_config: myconfig

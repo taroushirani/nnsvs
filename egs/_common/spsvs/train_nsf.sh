@@ -16,6 +16,7 @@ mkdir -p $nsf_output_dirs
 mkdir -p $nsf_save_model_dir
 
 xrun nnsvs-train-nsf $ext \
+     nsf=$nsf_config \
      nsf_root_dir=$nsf_root_dir \
      nsf.args.trained_model=$nsf_pretrained_model \
      nsf.args.save_model_dir=$nsf_save_model_dir \
