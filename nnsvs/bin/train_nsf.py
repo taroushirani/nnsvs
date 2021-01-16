@@ -79,9 +79,6 @@ def my_app(config : DictConfig) -> None:
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    if use_cuda:
-        torch.set_default_tensor_type(torch.cuda.FloatTensor) 
-    
     if not args.inference:
         # prepare data io    
         params = {'batch_size':  args.batch_size,
