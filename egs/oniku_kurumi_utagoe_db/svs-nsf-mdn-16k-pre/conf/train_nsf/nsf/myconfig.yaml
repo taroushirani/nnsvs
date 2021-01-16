@@ -5,9 +5,9 @@ type: hn-sinc-nsf
 args:
   # NSF default settings
   batch_size: 1
-  epochs: 50
-  no_best_epochs: 5
-  lr: 0.0001
+  epochs: 100
+  no_best_epochs: 20
+  lr: 0.00003
   no_cuda: false
   seed: 1
   eval_mode_for_validation: false
