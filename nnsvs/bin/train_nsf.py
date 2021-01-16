@@ -1,7 +1,7 @@
 # coding: utf-8
 import hydra
 from hydra.utils import to_absolute_path
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 import argparse
 import os
 from os.path import exists, join, splitext
@@ -171,7 +171,6 @@ def my_app(config : DictConfig) -> None:
             checkpoint = None 
         else:
             checkpoint = torch.load(args.trained_model)
-
 
         # Save nsf settings
         with open(join(args.save_model_dir, "config.yaml"), "w") as f:
