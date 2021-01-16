@@ -1,6 +1,7 @@
 # @package _group_
 root_dir:
-type: cyc-noise-nsf
+#type: cyc-noise-nsf
+type: hn-sinc-nsf
 args:
   # NSF default settings
   batch_size: 1
