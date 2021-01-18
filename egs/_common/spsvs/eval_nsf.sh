@@ -14,9 +14,11 @@ fi
 
 # for inference
 mkdir -p $nsf_test_output_dirs
-
+echo $nsf_save_model_dir
 xrun nnsvs-train-nsf $ext \
-     nsf_root_dir=$nsf_root_dir \
+     nsf=$nsf_config \
+     nsf.root_dir=$nsf_root_dir \
+     nsf.args.save_model_dir=$nsf_save_model_dir \
      nsf.args.inference=true  \
      nsf.model.test_input_dirs=["$nsf_test_input_dirs","$nsf_test_input_dirs","$nsf_test_input_dirs"]\
      nsf.model.test_output_dirs=$nsf_test_output_dirs
