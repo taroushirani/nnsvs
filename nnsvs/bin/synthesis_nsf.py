@@ -23,7 +23,8 @@ from nnmnkwii.preprocessing.f0 import interp1d
 from nnsvs.multistream import multi_stream_mlpg, get_static_stream_sizes, split_streams
 
 from nnsvs.gen import (
-    predict_timelag, predict_duration, predict_acoustic, postprocess_duration)
+    predict_timelag, predict_duration, predict_acoustic, postprocess_duration,
+    gen_waveform)
 
 from nnsvs.logger import getLogger
 logger = None
@@ -98,7 +99,7 @@ def dump_acoustic_features(config, device, label_path, question_path,
                            timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
                            duration_model, duration_config, duration_in_scaler, duration_out_scaler,
                            acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler,
-                           out_dir, utt_id):
+                           out_dir, utt_id, output_with_world=False):
     # load labels and question
     labels = hts.load(label_path).round_()
     binary_dict, continuous_dict = hts.load_question_set(
@@ -151,6 +152,18 @@ def dump_acoustic_features(config, device, label_path, question_path,
         mgc.astype(np.float32).tofile(f)
     with open(join(out_dir, utt_id + ".bap"), "wb") as f:
         bap.astype(np.float32).tofile(f)
+
+    if output_with_world:
+        generated_waveform = gen_waveform(
+            duration_modified_labels, acoustic_features,
+            binary_dict, continuous_dict, acoustic_config.stream_sizes,
+            acoustic_config.has_dynamic_features,
+            config.acoustic.subphone_features, log_f0_conditioning,
+            pitch_idx, acoustic_config.num_windows,
+            config.acoustic.post_filter, config.sample_rate, config.frame_period,
+            config.acoustic.relative_f0)
+        return generated_waveform
+
 
 def synthesis_nsf(config, utt_list, input_dir, output_dir):
     # load NSF modules
@@ -321,16 +334,12 @@ def my_app(config : DictConfig) -> None:
         label_path = join(in_dir, f"{utt_id}.lab")
         if not exists(label_path):
             raise RuntimeError(f"Label file does not exist: {label_path}")
-        dump_acoustic_features(config, device, label_path, question_path,
-                               timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
-                               duration_model, duration_config, duration_in_scaler, duration_out_scaler,
-                               acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler,
-                               out_dir, utt_id)
+        wav = dump_acoustic_features(config, device, label_path, question_path,
+                                     timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
+                                     duration_model, duration_config, duration_in_scaler, duration_out_scaler,
+                                     acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler,
+                                     out_dir, utt_id, output_with_world)
         if output_with_world:
-            wav = synthesis(config, device, label_path, question_path,
-                            timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
-                            duration_model, duration_config, duration_in_scaler, duration_out_scaler,
-                            acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler)
             wav = np.clip(wav, -32768, 32767)
             if config.gain_normalize:
                 wav = wav / np.max(np.abs(wav)) * 32767
