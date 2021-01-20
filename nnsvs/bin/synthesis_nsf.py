@@ -10,6 +10,7 @@ import torch
 from scipy.io import wavfile
 import sys
 import os
+from tqdm import tqdm
 from os.path import exists, join, splitext
 
 import pysptk
