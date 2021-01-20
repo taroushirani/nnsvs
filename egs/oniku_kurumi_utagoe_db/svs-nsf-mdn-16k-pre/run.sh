@@ -42,11 +42,9 @@ else
     expname=${spk}_${tag}
 fi
 expdir=exp/$expname
-nsf_input_dirs=$expdir/nsf/input_dirs
-nsf_output_dirs=$expdir/nsf/output_dirs
-nsf_test_input_dirs=$expdir/nsf/test_input_dirs
-nsf_test_output_dirs=$expdir/nsf/test_output_dirs
-nsf_save_model_dir=$expdir/nsf/train_outputs
+
+# For NSF common settings.
+. $NNSVS_COMMON_ROOT/nsf_common.sh
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
     if [ ! -e $db_root ]; then

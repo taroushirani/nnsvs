@@ -44,10 +44,10 @@ for s in ${testsets[@]}; do
              acoustic.in_scaler_path=$dump_norm_dir/in_acoustic_scaler.joblib \
              acoustic.out_scaler_path=$dump_norm_dir/out_acoustic_scaler.joblib \
              acoustic.model_yaml=$expdir/acoustic/model.yaml \
+	     nsf.config_yaml=$nsf_save_model_dir/config.yaml \
              utt_list=./data/list/$s.list \
              in_dir=data/acoustic/$input/ \
              out_dir=$expdir/synthesis/$s/latest/$input \
-             ground_truth_duration=$ground_truth_duration \
-	     nsf.config=$expdir/nsf/config.yaml 
+             ground_truth_duration=$ground_truth_duration
     done
 done
