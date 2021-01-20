@@ -165,23 +165,23 @@ def dump_acoustic_features(config, device, label_path, question_path,
         return generated_waveform
 
 
-def synthesis_nsf(config, utt_list, input_dir, output_dir):
+def synthesis_nsf(nsf_config, utt_list, input_dir, output_dir):
     # load NSF modules
-    assert config.nsf.root_dir
-    sys.path.append(to_absolute_path(config.nsf.root_dir))
+    assert nsf_config.root_dir
+    sys.path.append(to_absolute_path(nsf_config.root_dir))
     import core_scripts.data_io.default_data_io as nii_dset
     import core_scripts.other_tools.list_tools as nii_list_tool
     import core_scripts.nn_manager.nn_manager as nii_nn_wrapper
 
     # load NSF model
-    if config.nsf.type == "hn-sinc-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/hn-sinc-nsf-9")))
-    elif config.nsf.type == "hn-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/hn-nsf")))
-    elif config.nsf.type == "cyc-noise-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/cyc-noise-nsf-4")))
+    if nsf_config.type == "hn-sinc-nsf":
+        sys.path.append(to_absolute_path(join(nsf_config.root_dir, "project/hn-sinc-nsf-9")))
+    elif nsf_config.type == "hn-nsf":
+        sys.path.append(to_absolute_path(join(nsf_config.root_dir, "project/hn-nsf")))
+    elif nsf_config.type == "cyc-noise-nsf":
+        sys.path.append(to_absolute_path(join(nsf_config.root_dir, "project/cyc-noise-nsf-4")))
     else:
-        raise Exception(f"Unknown NSF type: {config.nsf.type}")
+        raise Exception(f"Unknown NSF type: {nsf_config.type}")
 
     import model as nsf_model
 
@@ -190,35 +190,35 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
     # to work with argparse, not hydra.
     # Setting of file paths are converted to absolute one(save_model_dir, trained_model, output_dir)
     args = argparse.Namespace()
-    args.batch_size = config.nsf.args.batch_size
-    args.epochs = config.nsf.args.epochs
-    args.no_best_epochs = config.nsf.args.no_best_epochs
-    args.lr = config.nsf.args.lr
-    args.no_cuda = config.nsf.args.no_cuda
-    args.seed = config.nsf.args.seed
-    args.eval_mode_for_validation = config.nsf.args.eval_mode_for_validation
-    args.model_forward_with_target = config.nsf.args.model_forward_with_target
-    args.model_forward_with_file_name = config.nsf.args.model_forward_with_file_name
-    args.shuffle = config.nsf.args.shuffle
-    args.num_workers = config.nsf.args.num_workers
-    args.multi_gpu_data_parallel = config.nsf.args.multi_gpu_data_parallel
-    if config.nsf.args.save_model_dir != None:
-        args.save_model_dir = to_absolute_path(config.nsf.args.save_model_dir)
+    args.batch_size = nsf_config.args.batch_size
+    args.epochs = nsf_config.args.epochs
+    args.no_best_epochs = nsf_config.args.no_best_epochs
+    args.lr = nsf_config.args.lr
+    args.no_cuda = nsf_config.args.no_cuda
+    args.seed = nsf_config.args.seed
+    args.eval_mode_for_validation = nsf_config.args.eval_mode_for_validation
+    args.model_forward_with_target = nsf_config.args.model_forward_with_target
+    args.model_forward_with_file_name = nsf_config.args.model_forward_with_file_name
+    args.shuffle = nsf_config.args.shuffle
+    args.num_workers = nsf_config.args.num_workers
+    args.multi_gpu_data_parallel = nsf_config.args.multi_gpu_data_parallel
+    if nsf_config.args.save_model_dir != None:
+        args.save_model_dir = to_absolute_path(nsf_config.args.save_model_dir)
     else:
         args.save_model_dir = None 
-    args.not_save_each_epoch = config.nsf.args.not_save_each_epoch
-    args.save_epoch_name = config.nsf.args.save_epoch_name
-    args.save_trained_name = config.nsf.args.save_trained_name
-    args.save_model_ext = config.nsf.args.save_model_ext
-    if config.nsf.args.trained_model != None:
-        args.trained_model = to_absolute_path(config.nsf.args.trained_model)
+    args.not_save_each_epoch = nsf_config.args.not_save_each_epoch
+    args.save_epoch_name = nsf_config.args.save_epoch_name
+    args.save_trained_name = nsf_config.args.save_trained_name
+    args.save_model_ext = nsf_config.args.save_model_ext
+    if nsf_config.args.trained_model != None:
+        args.trained_model = to_absolute_path(nsf_config.args.trained_model)
     else:
         args.trained_model = None
-    args.ignore_training_history_in_trained_model = config.nsf.args.ignore_training_history_in_trained_model
-    args.inference = config.nsf.args.inference
+    args.ignore_training_history_in_trained_model = nsf_config.args.ignore_training_history_in_trained_model
+    args.inference = nsf_config.args.inference
     args.output_dir = to_absolute_path(output_dir)
-    args.optimizer = config.nsf.args.optimizer
-    args.verbose = config.nsf.args.verbose
+    args.optimizer = nsf_config.args.optimizer
+    args.verbose = nsf_config.args.verbose
     
     torch.manual_seed(args.seed)
     use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -232,21 +232,21 @@ def synthesis_nsf(config, utt_list, input_dir, output_dir):
     test_set = nii_dset.NIIDataSetLoader("eval",
                                          utt_list, 
                                          [input_dir] * 3,
-                                         config.nsf.model.input_exts, 
-                                         config.nsf.model.input_dims, 
-                                         config.nsf.model.input_reso, 
-                                         config.nsf.model.input_norm, 
+                                         nsf_config.model.input_exts, 
+                                         nsf_config.model.input_dims, 
+                                         nsf_config.model.input_reso, 
+                                         nsf_config.model.input_norm, 
                                          [],
-                                         config.nsf.model.output_exts, 
-                                         config.nsf.model.output_dims, 
-                                         config.nsf.model.output_reso, 
-                                         config.nsf.model.output_norm, 
+                                         nsf_config.model.output_exts, 
+                                         nsf_config.model.output_dims, 
+                                         nsf_config.model.output_reso, 
+                                         nsf_config.model.output_norm, 
                                          args.save_model_dir,
                                          params = params,
                                          truncate_seq = None,
                                          min_seq_len = None,
                                          save_mean_std = False,
-                                         wav_samp_rate = config.nsf.model.wav_samp_rate)
+                                         wav_samp_rate = nsf_config.model.wav_samp_rate)
 
 
     # Initialize the model and loss function
