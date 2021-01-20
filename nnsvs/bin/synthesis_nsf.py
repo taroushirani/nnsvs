@@ -317,7 +317,7 @@ def my_app(config : DictConfig) -> None:
                 utt_list.append(l.strip())
                 
     logger.info(f"Processes {len(utt_list)} utterances...")
-    for utt_id in tqdm(len(utt_list)):
+    for utt_id in tqdm(utt_list):
         label_path = join(in_dir, f"{utt_id}.lab")
         if not exists(label_path):
             raise RuntimeError(f"Label file does not exist: {label_path}")
