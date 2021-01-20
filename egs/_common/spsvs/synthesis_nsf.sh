@@ -28,7 +28,7 @@ for s in ${testsets[@]}; do
 	    rm $nsf_save_model_dir/eval_utt_length.dic
 	fi
         xrun nnsvs-synthesis-nsf $ext \
-	     question_path=conf/$question_path \
+	     question_path=$question_path \
 	     timelag=$timelag_synthesis \
              duration=$duration_synthesis \
              acoustic=$acoustic_synthesis \
