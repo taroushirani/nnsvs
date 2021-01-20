@@ -7,6 +7,7 @@ import argparse
 import numpy as np
 import joblib
 import torch
+from scipy.io import wavfile
 import sys
 import os
 from os.path import exists, join, splitext
@@ -152,22 +153,21 @@ def dump_acoustic_features(config, device, label_path, question_path,
 
 def synthesis_nsf(config, utt_list, input_dir, output_dir):
     # load NSF modules
-    assert config.nsf_root_dir
-    nsf_root_dir = to_absolute_path(config.nsf_root_dir)
-    sys.path.append(nsf_root_dir)
+    assert config.nsf.root_dir
+    sys.path.append(to_absolute_path(config.nsf.root_dir))
     import core_scripts.data_io.default_data_io as nii_dset
     import core_scripts.other_tools.list_tools as nii_list_tool
     import core_scripts.nn_manager.nn_manager as nii_nn_wrapper
 
     # load NSF model
-    if config.nsf_type == "hn-sinc-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/hn-sinc-nsf-9")))
-    elif config.nsf_type == "hn-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/hn-nsf")))
-    elif config.nsf_type == "cyc-noise-nsf":
-        sys.path.append(to_absolute_path(join(config.nsf_root_dir, "project/cyc-noise-nsf-4")))
+    if config.nsf.type == "hn-sinc-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/hn-sinc-nsf-9")))
+    elif config.nsf.type == "hn-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/hn-nsf")))
+    elif config.nsf.type == "cyc-noise-nsf":
+        sys.path.append(to_absolute_path(join(config.nsf.root_dir, "project/cyc-noise-nsf-4")))
     else:
-        raise Exception(f"Unknown NSF type: {config.nsf_type}")
+        raise Exception(f"Unknown NSF type: {config.nsf.type}")
 
     import model as nsf_model
 
@@ -296,6 +296,10 @@ def my_app(config : DictConfig) -> None:
     acoustic_out_scaler = joblib.load(to_absolute_path(config.acoustic.out_scaler_path))
     acoustic_model.eval()
 
+    # nsf
+    nsf_config = OmegaConf.load(to_absolute_path(config.nsf.config_yaml))
+    output_with_world = config.nsf.output_with_world
+    
     # Run synthesis for each utt.
     question_path = to_absolute_path(config.question_path)
 
@@ -312,7 +316,7 @@ def my_app(config : DictConfig) -> None:
                 utt_list.append(l.strip())
                 
     logger.info(f"Processes {len(utt_list)} utterances...")
-    for utt_id in utt_list:
+    for utt_id in tqdm(len(utt_list)):
         label_path = join(in_dir, f"{utt_id}.lab")
         if not exists(label_path):
             raise RuntimeError(f"Label file does not exist: {label_path}")
@@ -321,7 +325,19 @@ def my_app(config : DictConfig) -> None:
                                duration_model, duration_config, duration_in_scaler, duration_out_scaler,
                                acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler,
                                out_dir, utt_id)
-    synthesis_nsf(config, utt_list, out_dir, out_dir)
+        if output_with_world:
+            wav = synthesis(config, device, label_path, question_path,
+                            timelag_model, timelag_config, timelag_in_scaler, timelag_out_scaler,
+                            duration_model, duration_config, duration_in_scaler, duration_out_scaler,
+                            acoustic_model, acoustic_config, acoustic_in_scaler, acoustic_out_scaler)
+            wav = np.clip(wav, -32768, 32767)
+            if config.gain_normalize:
+                wav = wav / np.max(np.abs(wav)) * 32767
+
+            out_wav_path = join(out_dir, f"{utt_id}_world.wav")
+            wavfile.write(out_wav_path, rate=config.sample_rate, data=wav.astype(np.int16))
+
+    synthesis_nsf(nsf_config, utt_list, out_dir, out_dir)
 
 def entry():
     my_app()
