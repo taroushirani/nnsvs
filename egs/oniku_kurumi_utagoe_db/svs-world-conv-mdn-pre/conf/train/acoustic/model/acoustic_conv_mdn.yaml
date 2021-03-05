@@ -13,5 +13,5 @@ netG:
   hidden_dim: 256
   num_layers: 6
   dropout: 0.1
-  num_gaussians: 4
+  num_gaussians: 1
   dim_wise: true
