@@ -71,6 +71,8 @@ jobs:
         pip install git+https://github.com/nnsvs/HN-UnifiedSourceFilterGAN@nnsvs --no-build-isolation
         # Install SiFi-GAN
         pip install git+https://github.com/nnsvs/SiFiGAN@nnsvs --no-build-isolation
+        # Install Wavehax (no nnsvs fork exists; use upstream directly)
+        pip install git+https://github.com/chomeyama/wavehax --no-build-isolation
 
     # pinned black/mypy/flake8/isort pull in typed-ast, which fails to build on Python 3.13
     - name: Install lint dependencies

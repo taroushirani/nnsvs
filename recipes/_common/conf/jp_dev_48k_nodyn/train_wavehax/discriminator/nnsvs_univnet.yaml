@@ -1,0 +1,44 @@
+# Based on Wavehax upstream's discriminator/univnet.yaml
+# (wavehax.discriminators.MultiResolutionMultiPeriodDiscriminator), with
+# fft_sizes/hop_sizes/win_lengths reused from nnsvs's own 48kHz-adapted
+# train_sifigan/discriminator/nnsvs_univnet.yaml (already validated for 48kHz
+# training in this repo), rather than upstream's 24kHz-tuned values.
+# NOTE: unlike SiFiGAN's own period/spectral discriminator params, Wavehax's
+# PeriodDiscriminator/SpectralDiscriminator take a smaller, differently-named
+# parameter set -- see wavehax/discriminators/univnet.py for the exact
+# signatures. Do not copy SiFiGAN's nnsvs_univnet.yaml keys verbatim here.
+
+_target_: wavehax.discriminators.MultiResolutionMultiPeriodDiscriminator
+
+# Multi-period discriminator related
+periods: [2, 3, 5, 7, 11]              # List of periods for the period discriminators.
+period_discriminator_params:
+  channels: 32                         # Number of initial channels.
+  kernel_sizes: [5, 3]                 # Kernel sizes for the first/last conv layers.
+  downsample_scales: [3, 3, 3, 3, 1]   # Downsampling scales.
+  max_downsample_channels: 1024        # Maximum number of channels after downsampling.
+  use_weight_norm: true                # Whether to apply weight normalization.
+  use_spectral_norm: false             # Whether to apply spectral normalization.
+
+# Multi-resolution spectral discriminator related
+fft_sizes: [1024, 2048, 512]           # FFT sizes for each spectral discriminator.
+hop_sizes: [120, 240, 50]              # Hop sizes for each spectral discriminator.
+win_lengths: [600, 1200, 240]          # Window lengths for each spectral discriminator.
+spectral_discriminator_params:
+  window: "hann_window"                # Name of window function.
+  channels: 32                         # Number of hidden channels.
+  kernel_sizes:                        # List of kernel sizes for conv layers.
+    - [7, 5]
+    - [5, 3]
+    - [5, 3]
+    - [3, 3]
+    - [3, 3]
+    - [3, 3]
+  strides:                             # List of strides for conv layers.
+    - [2, 2]
+    - [2, 1]
+    - [2, 2]
+    - [2, 1]
+    - [2, 2]
+    - [1, 1]
+  use_weight_norm: true                # Whether to apply weight normalization.

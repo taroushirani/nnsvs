@@ -10,6 +10,7 @@ import torch
 from hydra.utils import instantiate
 from nnsvs.multistream import get_static_features, get_static_stream_sizes
 from nnsvs.usfgan import USFGANWrapper
+from nnsvs.wavehax import WavehaxWrapper
 from omegaconf import OmegaConf
 from torch import nn
 
@@ -355,7 +356,7 @@ def extract_static_scaler(out_scaler, model_config):
 def load_vocoder(path, device, acoustic_config):
     """Load vocoder model from a given checkpoint path
 
-    Note that the path needs to be a checkpoint of PWG or USFGAN.
+    Note that the path needs to be a checkpoint of PWG, USFGAN or Wavehax.
 
     Args:
         path (str or Path): Path to the vocoder model
@@ -378,10 +379,59 @@ def load_vocoder(path, device, acoustic_config):
         # PWG checkpoint
         vocoder_config = OmegaConf.load(model_dir / "config.yml")
     else:
-        # usfgan
+        # usfgan or wavehax
         vocoder_config = OmegaConf.load(model_dir / "config.yaml")
 
-    if "generator" in vocoder_config and "discriminator" in vocoder_config:
+    if (
+        "generator" in vocoder_config
+        and "discriminator" in vocoder_config
+        and str(vocoder_config.generator.get("_target_", "")).startswith("wavehax.")
+    ):
+        # Wavehax
+        from wavehax.modules import remove_weight_norm
+
+        checkpoint = torch.load(
+            path,
+            map_location=lambda storage, loc: storage,
+        )
+
+        vocoder = instantiate(vocoder_config.generator).to(device)
+        vocoder.load_state_dict(checkpoint["model"]["generator"])
+        vocoder.apply(remove_weight_norm)
+        vocoder = WavehaxWrapper(vocoder_config, vocoder)
+
+        stream_sizes = get_static_stream_sizes(
+            acoustic_config.stream_sizes,
+            acoustic_config.has_dynamic_features,
+            acoustic_config.num_windows,
+        )
+
+        # Extract scaler params for [mgc, bap] or [mel], keyed by feat_names
+        # (Wavehax's data config uses feat_names, not usfgan's aux_feats)
+        if "mel" in vocoder_config.data.feat_names:
+            # streams: (mel, lf0, vuv)
+            mel_dim = stream_sizes[0]
+            vocoder_in_scaler = StandardScaler(
+                np.load(model_dir / "in_vocoder_scaler_mean.npy")[:mel_dim],
+                np.load(model_dir / "in_vocoder_scaler_var.npy")[:mel_dim],
+                np.load(model_dir / "in_vocoder_scaler_scale.npy")[:mel_dim],
+            )
+        else:
+            # streams: (mgc, lf0, vuv, bap)
+            mean_ = np.load(model_dir / "in_vocoder_scaler_mean.npy")
+            var_ = np.load(model_dir / "in_vocoder_scaler_var.npy")
+            scale_ = np.load(model_dir / "in_vocoder_scaler_scale.npy")
+            mgc_end_dim = stream_sizes[0]
+            bap_start_dim = sum(stream_sizes[:3])
+            bap_end_dim = sum(stream_sizes[:4])
+            vocoder_in_scaler = StandardScaler(
+                np.concatenate([mean_[:mgc_end_dim], mean_[bap_start_dim:bap_end_dim]]),
+                np.concatenate([var_[:mgc_end_dim], var_[bap_start_dim:bap_end_dim]]),
+                np.concatenate(
+                    [scale_[:mgc_end_dim], scale_[bap_start_dim:bap_end_dim]]
+                ),
+            )
+    elif "generator" in vocoder_config and "discriminator" in vocoder_config:
         # usfgan
         checkpoint = torch.load(
             path,

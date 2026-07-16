@@ -47,13 +47,23 @@ fi
 if [[ ${vocoder_model+x} || ${vocoder_eval_checkpoint+x} ]]; then
     # PWG & uSFGAN
     if [[ -z "${vocoder_eval_checkpoint}" && ! -z ${vocoder_model} && -d ${expdir}/${vocoder_model} ]]; then
-        vocoder_eval_checkpoint="$(ls -dt "$expdir/$vocoder_model"/*.pkl | head -1 || true)"
+        vocoder_eval_checkpoint="$(ls -dt "$expdir/$vocoder_model"/*.pkl 2>/dev/null | head -1 || true)"
+        # Wavehax saves checkpoints under an out_dir/checkpoints/ subdirectory
+        # instead of flat in out_dir like PWG/uSFGAN/SiFiGAN
+        if [ -z "${vocoder_eval_checkpoint}" ]; then
+            vocoder_eval_checkpoint="$(ls -dt "$expdir/$vocoder_model"/checkpoints/*.pkl 2>/dev/null | head -1 || true)"
+        fi
     fi
     if [ -e "$vocoder_eval_checkpoint" ]; then
         python $NNSVS_COMMON_ROOT/clean_checkpoint_state.py $vocoder_eval_checkpoint \
             $dst_dir/vocoder_model.pth
         # PWG's expdir or packed model's dir
         voc_dir=$(dirname $vocoder_eval_checkpoint)
+        # Wavehax's expdir: config.yaml and in_vocoder*.npy live one level up
+        # from the checkpoints/ subdirectory
+        if [ "$(basename $voc_dir)" = "checkpoints" ]; then
+            voc_dir=$(dirname $voc_dir)
+        fi
         # PWG's expdir
         if [ -e ${voc_dir}/config.yml ]; then
             cp ${voc_dir}/config.yml $dst_dir/vocoder_model.yaml

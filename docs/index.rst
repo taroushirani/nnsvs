@@ -77,6 +77,7 @@ You can find more from the NNSVS/ENUNU community: `YouTube <https://www.youtube.
    optuna
    train_vocoders
    train_usfgan
+   train_wavehax
    enunu2nnsvs
 
 .. toctree::

@@ -1,0 +1,25 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - generator: nnsvs_world_wavehax_sr48k
+  - discriminator: nnsvs_univnet
+  - train: nnsvs_wavehax
+  - data: nnsvs_world_sr48k
+
+# NOTE: the above defaults are placeholders. train_wavehax.sh always
+# overrides generator/discriminator/train/data via CLI, matching the
+# train_usfgan.sh/train_sifigan.sh convention.
+
+hydra:
+  # run:
+  #   dir: ./
+  # output_subdir: null
+  job_logging:
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(levelname)s][%(module)s | %(lineno)s] %(message)s'
+    disable_existing_loggers: false
+
+out_dir:     # Directory to output training results.
+seed: 12345  # Seed number for random numbers.

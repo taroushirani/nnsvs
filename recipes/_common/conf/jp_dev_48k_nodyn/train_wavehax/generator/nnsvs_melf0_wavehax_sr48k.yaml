@@ -1,0 +1,25 @@
+# stream_sizes: [80, 1, 1]
+# hop_size: 240
+# sample_rate: 48000
+# aux_channels: 80
+# feat_types: ["f0", "contf0", "mel"]
+# aux_feats: ["mel"]
+#
+# NOTE on n_fft: see generator/nnsvs_world_wavehax_sr48k.yaml for the
+# rationale (no official Wavehax 48kHz precedent; n_fft chosen to preserve
+# upstream's 50 Hz/bin resolution and 20ms analysis window).
+
+_target_: wavehax.generators.WavehaxGenerator
+in_channels: 80               # Number of input channels (aux features).
+channels: 32                  # Number of hidden channels.
+mult_channels: 2              # Channel expansion factor in ConvNeXt blocks.
+kernel_size: 7                # Kernel size of the ConvNeXt blocks.
+num_blocks: 8                 # Number of ConvNeXt blocks.
+n_fft: 960                    # FFT size (see NOTE above).
+hop_length: 240                # Hop length. Fixed by nnsvs's 5ms @ 48kHz frame period.
+sample_rate: 48000            # Sampling rate.
+prior_type: "pcph_closed_form" # Type of the periodic prior signal.
+drop_prob: 0.0                # Stochastic depth drop probability.
+use_layer_norm: true           # Whether to use layer normalization.
+framewise_norm: false          # Whether to use frame-wise normalization.
+use_logmag_phase: false        # Whether to use log-magnitude/phase STFT parameterization.

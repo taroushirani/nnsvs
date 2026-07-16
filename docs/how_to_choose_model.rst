@@ -51,3 +51,4 @@ Vocoder
 
 - Use WORLD first. WORLD can achieve reasonably good-quality synthesis with pitch robustness. It also generalizes well on unseen speakers (singers) with no training.
 - If you want to maximize the quality, use `uSFGAN <https://github.com/chomeyama/HN-UnifiedSourceFilterGAN>`_.
+- `Wavehax <https://github.com/chomeyama/wavehax>`_ is also available as a newer alternative, but unlike uSFGAN/SiFiGAN it has no official singing-voice-synthesis recipe or checkpoint, so its quality on singing data is unverified. See :doc:`train_wavehax` before choosing it.

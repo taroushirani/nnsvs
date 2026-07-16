@@ -1,0 +1,33 @@
+# NOTE: Wavehax's own data config keys (train_audio/train_feat/.../feat_names/
+# use_continuous_f0/batch_max_length/...) are used here, matching
+# wavehax/bin/config/data/jvs.yaml upstream. These differ from SiFiGAN/uSFGAN's
+# own data yaml keys (sampling_rate/hop_size/dense_factors/aux_feats/...),
+# which do NOT apply to Wavehax's dataloader (wavehax.datasets.AudioFeatDataset).
+
+# Dataset settings
+train_audio: data/scp/namine_ritsu_train_no_dev.scp  # List file of training audio files.
+train_feat: data/scp/namine_ritsu_train_no_dev.list  # List file of training feature files.
+valid_audio: data/scp/namine_ritsu_dev.scp  # List file of validation audio files.
+valid_feat: data/scp/namine_ritsu_dev.list  # List file of validation feature files.
+eval_audio: data/scp/namine_ritsu_eval.scp  # List file of evaluation audio files for decoding.
+eval_feat: data/scp/namine_ritsu_eval.list  # List file of evaluation feature files for decoding.
+stats: data/stats/namine_ritsu_train_no_dev.joblib  # Path to the file of statistics.
+
+# Feature settings
+feat_names: ["mcep", "codeap"]  # Names of auxiliary features.
+                                # "mcep": mel-cepstral envelope.
+                                # "codeap": coded aperiodicity.
+use_continuous_f0: false        # Whether to use continuous F0.
+                                 # NOTE: unlike SiFiGAN, Wavehax's dataloader has no
+                                 # separate V/UV key -- voicing is encoded as f0==0
+                                 # in the "f0" HDF5 key (see utils/nnsvs2wavehax.py).
+
+# Data loader setting
+batch_max_length: 24000  # Length of each audio in batch. Make sure dividable by hop_length.
+batch_size: 8             # Batch size.
+num_workers: 0            # Number of workers in Pytorch DataLoader.
+pin_memory: true          # Whether to pin memory in Pytorch DataLoader.
+
+# Other setting
+remove_short_samples: true  # Whether to remove samples the length of which are less than batch_max_length.
+allow_cache: false           # Whether to allow cache in dataset. If true, it requires cpu memory.

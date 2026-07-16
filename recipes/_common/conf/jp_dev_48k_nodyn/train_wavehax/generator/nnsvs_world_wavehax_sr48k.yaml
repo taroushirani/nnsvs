@@ -1,0 +1,31 @@
+# stream_sizes: [60, 1, 1, 5]
+# hop_size: 240
+# sample_rate: 48000
+# aux_channels: 65
+# feat_types: ["f0", "contf0", "mcep", "codeap"]
+# aux_feats: ["mcep", "codeap"]
+#
+# NOTE on n_fft: Wavehax upstream (wavehax.v1.yaml, JVS recipe) uses
+# n_fft: 480 / hop_length: 240 / sample_rate: 24000. nnsvs's hop_length: 240
+# is a *different* physical hop (5ms @ 48kHz, fixed by nnsvs's existing WORLD
+# analysis convention) from upstream's hop_length: 240 (10ms @ 24kHz), so the
+# two "240"s are not directly comparable. There is no official Wavehax
+# recipe/checkpoint at 48kHz, so n_fft here was chosen to preserve upstream's
+# frequency resolution (sample_rate / n_fft = 50 Hz/bin) and analysis window
+# duration (n_fft / sample_rate = 20 ms), rather than upstream's n_fft/hop_length
+# ratio. This value is a project-local tuning choice, not an upstream default.
+
+_target_: wavehax.generators.WavehaxGenerator
+in_channels: 65               # Number of input channels (aux features).
+channels: 32                  # Number of hidden channels.
+mult_channels: 2              # Channel expansion factor in ConvNeXt blocks.
+kernel_size: 7                # Kernel size of the ConvNeXt blocks.
+num_blocks: 8                 # Number of ConvNeXt blocks.
+n_fft: 960                    # FFT size (see NOTE above).
+hop_length: 240                # Hop length. Fixed by nnsvs's 5ms @ 48kHz frame period.
+sample_rate: 48000            # Sampling rate.
+prior_type: "pcph_closed_form" # Type of the periodic prior signal.
+drop_prob: 0.0                # Stochastic depth drop probability.
+use_layer_norm: true           # Whether to use layer normalization.
+framewise_norm: false          # Whether to use frame-wise normalization.
+use_logmag_phase: false        # Whether to use log-magnitude/phase STFT parameterization.

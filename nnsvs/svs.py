@@ -28,6 +28,7 @@ from nnsvs.io.hts import (
 )
 from nnsvs.logger import getLogger
 from nnsvs.usfgan import USFGANWrapper
+from nnsvs.wavehax import WavehaxWrapper
 from nnsvs.util import MinMaxScaler, StandardScaler, extract_static_scaler, load_vocoder
 from omegaconf import OmegaConf
 
@@ -535,15 +536,16 @@ Acoustic model: {acoustic_str}
 
         Args:
             multistream_features (tuple): Multi-stream acoustic features.
-            vocoder_type (str): Vocoder type. One of ``world``, ``pwg`` or ``usfgan``.
-                If ``auto`` is specified, the vocoder is automatically selected.
+            vocoder_type (str): Vocoder type. One of ``world``, ``pwg``, ``usfgan``
+                or ``wavehax``. If ``auto`` is specified, the vocoder is
+                automatically selected.
             vuv_threshold (float): V/UV threshold.
 
         Returns:
             ndarray: Predicted waveform.
         """
         start_time = time.time()
-        if vocoder_type in ["pwg", "usfgan"] and self.vocoder is None:
+        if vocoder_type in ["pwg", "usfgan", "wavehax"] and self.vocoder is None:
             raise ValueError(
                 """Pre-trained vocodr model is not found.
 WORLD is only supported for waveform generation"""
@@ -552,16 +554,21 @@ WORLD is only supported for waveform generation"""
         if vocoder_type == "auto":
             if self.feature_type == "melf0":
                 assert self.vocoder is not None
-                vocoder_type = (
-                    "usfgan" if isinstance(self.vocoder, USFGANWrapper) else "pwg"
-                )
+                if isinstance(self.vocoder, USFGANWrapper):
+                    vocoder_type = "usfgan"
+                elif isinstance(self.vocoder, WavehaxWrapper):
+                    vocoder_type = "wavehax"
+                else:
+                    vocoder_type = "pwg"
             elif self.feature_type == "world":
                 if self.vocoder is None:
                     vocoder_type = "world"
+                elif isinstance(self.vocoder, USFGANWrapper):
+                    vocoder_type = "usfgan"
+                elif isinstance(self.vocoder, WavehaxWrapper):
+                    vocoder_type = "wavehax"
                 else:
-                    vocoder_type = (
-                        "usfgan" if isinstance(self.vocoder, USFGANWrapper) else "pwg"
-                    )
+                    vocoder_type = "pwg"
         wav = predict_waveform(
             device=self.device,
             multistream_features=multistream_features,
@@ -638,8 +645,9 @@ WORLD is only supported for waveform generation"""
 
         Args:
             labels (nnmnkwii.io.hts.HTSLabelFile): HTS labels
-            vocoder_type (str): Vocoder type. One of ``world``, ``pwg`` or ``usfgan``.
-                If ``auto`` is specified, the vocoder is automatically selected.
+            vocoder_type (str): Vocoder type. One of ``world``, ``pwg``, ``usfgan``
+                or ``wavehax``. If ``auto`` is specified, the vocoder is
+                automatically selected.
             post_filter_type (str): Post-filter type. ``merlin``, ``gv`` or ``nnsvs``
                 is supported.
             trajectory_smoothing (bool): Whether to smooth acoustic feature trajectory.
@@ -658,7 +666,7 @@ WORLD is only supported for waveform generation"""
         """
         start_time = time.time()
         vocoder_type = vocoder_type.lower()
-        if vocoder_type not in ["world", "pwg", "usfgan", "auto"]:
+        if vocoder_type not in ["world", "pwg", "usfgan", "wavehax", "auto"]:
             raise ValueError(f"Unknown vocoder type: {vocoder_type}")
         if post_filter_type not in ["merlin", "nnsvs", "gv", "none"]:
             raise ValueError(f"Unknown post-filter type: {post_filter_type}")

@@ -875,7 +875,7 @@ def predict_waveform(
 ):
     """Predict waveform from multi-stream acoustic features
 
-    Vocoders can be 1) WORLD, 2) PWG or 3) uSFGAN.
+    Vocoders can be 1) WORLD, 2) PWG, 3) uSFGAN or 4) Wavehax.
 
     Args:
         device (torch.device): Device to run inference
@@ -888,7 +888,8 @@ def predict_waveform(
         use_world_codec (bool): Whether to use WORLD codec for decoding.
         feature_type (str): Feature type.
             ``world`` ``world_org``, ``melf0`` or ``neutrino``.
-        vocoder_type (str): Vocoder type. ``world`` or ``pwg`` or ``usfgan``
+        vocoder_type (str): Vocoder type. ``world``, ``pwg``, ``usfgan`` or
+            ``wavehax``
         vuv_threshold (float): VUV threshold.
 
     Returns:
@@ -1023,6 +1024,61 @@ def predict_waveform(
             f0_inp[vuv < vuv_threshold] = 0
         # NOTE: uSFGAN internally performs normalization
         # so we don't need to normalize inputs here
+        wav = vocoder.inference(f0_inp, aux_feats).view(-1).to("cpu").numpy()
+    elif vocoder_type == "wavehax":
+        if feature_type in ["world", "neutrino"]:
+            fftlen = pyworld.get_cheaptrick_fft_size(sample_rate)
+            if use_mcep_aperiodicity:
+                # Convert mel-cepstrum-based aperiodicity to WORLD's aperiodicity
+                aperiodicity_order = bap.shape[-1] - 1
+                alpha = pysptk.util.mcepalpha(sample_rate)
+                aperiodicity = pysptk.mc2sp(
+                    np.ascontiguousarray(bap).astype(np.float64),
+                    fftlen=fftlen,
+                    alpha=alpha,
+                )
+            else:
+                aperiodicity = pyworld.decode_aperiodicity(
+                    np.ascontiguousarray(bap).astype(np.float64),
+                    sample_rate,
+                    fftlen,
+                )
+            # fill aperiodicity with ones for unvoiced regions
+            aperiodicity[vuv.reshape(-1) < vuv_threshold, 0] = 1.0
+            # WORLD fails catastrophically for out of range aperiodicity
+            aperiodicity = np.clip(aperiodicity, 0.0, 1.0)
+
+            # Convert aperiodicity back to BAP
+            if use_mcep_aperiodicity:
+                bap = pysptk.sp2mc(
+                    aperiodicity,
+                    order=aperiodicity_order,
+                    alpha=alpha,
+                )
+            else:
+                bap = pyworld.code_aperiodicity(aperiodicity, sample_rate).astype(
+                    np.float32
+                )
+            aux_feats = [mgc, bap]
+        elif feature_type == "melf0":
+            aux_feats = [mel]
+        elif feature_type == "world_org":
+            raise NotImplementedError()
+
+        aux_feats = (
+            torch.from_numpy(
+                vocoder_in_scaler.transform(np.concatenate(aux_feats, axis=-1))
+            )
+            .float()
+            .to(device)
+        )
+
+        # NOTE: unlike uSFGAN, Wavehax has no external excitation-signal
+        # generator or sine_f0_type config -- it synthesizes its own harmonic
+        # prior internally from continuous F0. Passing continuous (non-gated)
+        # F0 here; whether unvoiced frames should be zeroed instead is unverified
+        # (see Open Questions in the implementation plan).
+        f0_inp = np.exp(lf0)
         wav = vocoder.inference(f0_inp, aux_feats).view(-1).to("cpu").numpy()
 
     return wav
