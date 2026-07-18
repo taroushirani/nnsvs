@@ -2,7 +2,19 @@
 # Please don't try to run the shell script directory.
 
 if [ ! -z ${pretrained_vocoder_checkpoint} ]; then
-    extra_args="--resume $pretrained_vocoder_checkpoint"
+    ckpt_basename=$(basename "${pretrained_vocoder_checkpoint}")
+    if [[ "$ckpt_basename" =~ ^checkpoint-([0-9]+)steps\.pkl$ ]]; then
+        resume_steps="${BASH_REMATCH[1]}"
+    else
+        echo "ERROR: pretrained_vocoder_checkpoint must be named checkpoint-<steps>steps.pkl (got: $ckpt_basename)"
+        exit 1
+    fi
+    if [ ! -e "$expdir/$vocoder_model/checkpoints/checkpoint-${resume_steps}steps.pkl" ]; then
+        echo "ERROR: expected checkpoint not found at $expdir/$vocoder_model/checkpoints/checkpoint-${resume_steps}steps.pkl"
+        echo "Resume only supports continuing training within the same experiment directory (out_dir=$expdir/$vocoder_model)."
+        exit 1
+    fi
+    extra_args="train.resume=${resume_steps}"
 else
     extra_args=""
 fi
