@@ -9,8 +9,8 @@ and plain WORLD.
 
 .. warning::
 
-    Unlike PWG/uSFGAN/SiFiGAN, Wavehax has no official singing-voice-synthesis recipe, checkpoint,
-    or nnsvs-specific fork. Only a JVS (speech) recipe exists upstream. The configs and 48kHz
+    Unlike PWG/uSFGAN/SiFiGAN, Wavehax has no official singing-voice-synthesis recipe or
+    checkpoint upstream; only a JVS (speech) recipe exists. The configs and 48kHz
     ``sample_rate``/``n_fft`` values shipped with NNSVS are project-local tuning choices made
     without an upstream 48kHz precedent, not validated defaults. Training convergence and audio
     quality on singing data have not been verified end-to-end; only the nnsvs-side wiring
@@ -19,9 +19,15 @@ and plain WORLD.
 Install Wavehax
 ----------------
 
+NNSVS installs Wavehax from an unofficial nnsvs-specific fork,
+`taroushirani/wavehax <https://github.com/taroushirani/wavehax/tree/nnsvs>`_ (``nnsvs`` branch),
+rather than upstream ``chomeyama/wavehax``. The fork's only functional difference is that it
+writes/reads checkpoints directly under ``out_dir`` instead of an ``out_dir/checkpoints/``
+subdirectory (see the note in Stage 14 below).
+
 .. code::
 
-    pip install git+https://github.com/chomeyama/wavehax --no-build-isolation
+    pip install git+https://github.com/taroushirani/wavehax@nnsvs --no-build-isolation
 
 Stage 9: Prepare features for neural vocoders
 -----------------------------------------------
@@ -77,10 +83,13 @@ Stage 14: Training Wavehax vocoder
     CUDA_VISIBLE_DEVICES=0 ./run.sh --stage 14 --stop-stage 14 \
         --vocoder-model nnsvs_world_wavehax_sr48k
 
-Checkpoints are written under ``exp/${speaker name}/${vocoder config name}/checkpoints/``
-(note the extra ``checkpoints/`` subdirectory, unlike PWG/uSFGAN/SiFiGAN which write checkpoints
-flat in the output directory). ``pack_model.sh`` and ``run_common_steps_dev.sh``'s stage 99 both
-account for this when locating the latest checkpoint.
+Checkpoints are written under ``exp/${speaker name}/${vocoder config name}`` directly, the same
+flat layout PWG/uSFGAN/SiFiGAN use. This matches the nnsvs fork of Wavehax installed above
+(``taroushirani/wavehax@nnsvs``), which removed the ``checkpoints/`` subdirectory that upstream
+``chomeyama/wavehax`` still uses. ``recipes/_common/spsvs/train_wavehax.sh``, ``pack_model.sh``,
+and ``run_common_steps_dev.sh``'s stage 99 all check the flat layout first, falling back to the
+legacy ``out_dir/checkpoints/`` subdirectory only for checkpoints produced by upstream
+``chomeyama/wavehax``.
 
 How to use the packed model with the trained vocoder?
 ---------------------------------------------------------

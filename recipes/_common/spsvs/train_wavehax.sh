@@ -9,8 +9,8 @@ if [ ! -z ${pretrained_vocoder_checkpoint} ]; then
         echo "ERROR: pretrained_vocoder_checkpoint must be named checkpoint-<steps>steps.pkl (got: $ckpt_basename)"
         exit 1
     fi
-    if [ ! -e "$expdir/$vocoder_model/checkpoints/checkpoint-${resume_steps}steps.pkl" ]; then
-        echo "ERROR: expected checkpoint not found at $expdir/$vocoder_model/checkpoints/checkpoint-${resume_steps}steps.pkl"
+    if [ ! -e "$expdir/$vocoder_model/checkpoint-${resume_steps}steps.pkl" ]; then
+        echo "ERROR: expected checkpoint not found at $expdir/$vocoder_model/checkpoint-${resume_steps}steps.pkl"
         echo "Resume only supports continuing training within the same experiment directory (out_dir=$expdir/$vocoder_model)."
         exit 1
     fi

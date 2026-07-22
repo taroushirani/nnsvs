@@ -48,8 +48,9 @@ if [[ ${vocoder_model+x} || ${vocoder_eval_checkpoint+x} ]]; then
     # PWG & uSFGAN
     if [[ -z "${vocoder_eval_checkpoint}" && ! -z ${vocoder_model} && -d ${expdir}/${vocoder_model} ]]; then
         vocoder_eval_checkpoint="$(ls -dt "$expdir/$vocoder_model"/*.pkl 2>/dev/null | head -1 || true)"
-        # Wavehax saves checkpoints under an out_dir/checkpoints/ subdirectory
-        # instead of flat in out_dir like PWG/uSFGAN/SiFiGAN
+        # Legacy fallback: upstream chomeyama/wavehax (as opposed to the nnsvs fork,
+        # taroushirani/wavehax@nnsvs, that NNSVS now installs) saves checkpoints under
+        # an out_dir/checkpoints/ subdirectory instead of flat in out_dir.
         if [ -z "${vocoder_eval_checkpoint}" ]; then
             vocoder_eval_checkpoint="$(ls -dt "$expdir/$vocoder_model"/checkpoints/*.pkl 2>/dev/null | head -1 || true)"
         fi
@@ -59,8 +60,8 @@ if [[ ${vocoder_model+x} || ${vocoder_eval_checkpoint+x} ]]; then
             $dst_dir/vocoder_model.pth
         # PWG's expdir or packed model's dir
         voc_dir=$(dirname $vocoder_eval_checkpoint)
-        # Wavehax's expdir: config.yaml and in_vocoder*.npy live one level up
-        # from the checkpoints/ subdirectory
+        # Legacy fallback: with upstream chomeyama/wavehax's checkpoints/ subdirectory,
+        # config.yaml and in_vocoder*.npy live one level up from it.
         if [ "$(basename $voc_dir)" = "checkpoints" ]; then
             voc_dir=$(dirname $voc_dir)
         fi
