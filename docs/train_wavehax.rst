@@ -12,9 +12,10 @@ and plain WORLD.
     Unlike PWG/uSFGAN/SiFiGAN, Wavehax has no official singing-voice-synthesis recipe or
     checkpoint upstream; only a JVS (speech) recipe exists. The configs and 48kHz
     ``sample_rate``/``n_fft`` values shipped with NNSVS are project-local tuning choices made
-    without an upstream 48kHz precedent, not validated defaults. Training convergence and audio
-    quality on singing data have not been verified end-to-end; only the nnsvs-side wiring
-    (config parsing, data conversion, inference-time integration) has been tested.
+    without an upstream 48kHz precedent, not validated defaults. A community member has since
+    reported a successful end-to-end run on real singing data (see `Pre-trained base checkpoint`_
+    below), but this is a single external report without published objective/subjective metrics
+    or audio samples — not a benchmark run or verified by the NNSVS project itself.
 
 Install Wavehax
 ----------------
@@ -28,6 +29,23 @@ subdirectory (see the note in Stage 14 below).
 .. code::
 
     pip install git+https://github.com/taroushirani/wavehax@nnsvs --no-build-isolation
+
+Pre-trained base checkpoint
+-----------------------------
+
+A community member has published a Wavehax base checkpoint trained on 5 singing-voice
+databases for 100k steps: `Canon/nnsvs-wavehax-base <https://huggingface.co/Canon/nnsvs-wavehax-base>`_
+(MIT-licensed, free for commercial use and redistribution).
+
+Per their report, fine-tuning this base on an unseen singer for 2,000 steps produced synthesis
+(driven by acoustic-model-predicted features, not ground truth) judged comparable in quality to
+WORLD vocoding. This was relayed via community correspondence rather than published as a
+benchmark with metrics or audio samples, and Wavehax's output is non-deterministic, so results
+may vary run to run — treat it as a promising starting point to fine-tune from and evaluate
+yourself, not a verified guarantee.
+
+Fine-tuning from a pre-trained checkpoint follows the same ``load_optimizer: false`` resume
+convention documented in :doc:`tips` for other model types.
 
 Stage 9: Prepare features for neural vocoders
 -----------------------------------------------
