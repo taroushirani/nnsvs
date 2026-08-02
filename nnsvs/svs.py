@@ -139,6 +139,7 @@ class SPSVS(BaseSVS):
         checkpoint = torch.load(
             model_dir / "timelag_model.pth",
             map_location=device,
+            weights_only=True,
         )
         self.timelag_model.load_state_dict(checkpoint["state_dict"])
 
@@ -159,6 +160,7 @@ class SPSVS(BaseSVS):
         checkpoint = torch.load(
             model_dir / "duration_model.pth",
             map_location=device,
+            weights_only=True,
         )
         self.duration_model.load_state_dict(checkpoint["state_dict"])
 
@@ -179,6 +181,7 @@ class SPSVS(BaseSVS):
         checkpoint = torch.load(
             model_dir / "acoustic_model.pth",
             map_location=device,
+            weights_only=True,
         )
         self.acoustic_model.load_state_dict(checkpoint["state_dict"])
         self.acoustic_in_scaler = MinMaxScaler(
@@ -202,6 +205,7 @@ class SPSVS(BaseSVS):
             checkpoint = torch.load(
                 model_dir / "lf0_model.pth",
                 map_location=device,
+                weights_only=True,
             )
             self.acoustic_model.lf0_model.load_state_dict(checkpoint["state_dict"])
 
@@ -214,6 +218,7 @@ class SPSVS(BaseSVS):
             checkpoint = torch.load(
                 model_dir / "postfilter_model.pth",
                 map_location=device,
+                weights_only=True,
             )
             self.postfilter_model.load_state_dict(checkpoint["state_dict"])
             self.postfilter_model.eval()

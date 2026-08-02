@@ -19,7 +19,9 @@ def get_parser():
 if __name__ == "__main__":
     args = get_parser().parse_args(sys.argv[1:])
 
-    checkpoint = torch.load(args.input_file, map_location=torch.device("cpu"))
+    checkpoint = torch.load(
+        args.input_file, map_location=torch.device("cpu"), weights_only=True
+    )
     size = os.path.getsize(args.input_file)
     print("Processisng:", args.input_file)
     print(f"File size (before): {size / 1024/1024:.3f} MB")

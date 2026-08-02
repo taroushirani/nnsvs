@@ -20,8 +20,12 @@ def get_parser():
 if __name__ == "__main__":
     args = get_parser().parse_args(sys.argv[1:])
 
-    mgc_checkpoint = torch.load(args.mgc_checkpoint, map_location="cpu")
-    bap_checkpoint = torch.load(args.bap_checkpoint, map_location="cpu")
+    mgc_checkpoint = torch.load(
+        args.mgc_checkpoint, map_location="cpu", weights_only=True
+    )
+    bap_checkpoint = torch.load(
+        args.bap_checkpoint, map_location="cpu", weights_only=True
+    )
 
     for path in [args.mgc_checkpoint, args.bap_checkpoint]:
         size = os.path.getsize(path)

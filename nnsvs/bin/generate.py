@@ -37,6 +37,7 @@ def my_app(config: DictConfig) -> None:
     checkpoint = torch.load(
         to_absolute_path(config.model.checkpoint),
         map_location=lambda storage, loc: storage,
+        weights_only=True,
     )
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()

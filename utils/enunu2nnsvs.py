@@ -49,7 +49,9 @@ def _scaler2numpy(input_file, out_dir, logger):
 
 def _save_checkpoint(input_file, output_file, logger):
     checkpoint = torch.load(
-        input_file, map_location=torch.device("cpu")  # pylint: disable='no-member'
+        input_file,
+        map_location=torch.device("cpu"),  # pylint: disable='no-member'
+        weights_only=True,
     )
     size = os.path.getsize(input_file)
     logger.info(f"Processisng: {input_file}")

@@ -10,6 +10,8 @@ from omegaconf import OmegaConf
 def test_mdn_compat():
     config = OmegaConf.load(join(dirname(__file__), "data", "mdn_test.yaml"))
     model = hydra.utils.instantiate(config.netG)
-    checkpoint = torch.load(join(dirname(__file__), "data", "mdn_test.pth"))
+    checkpoint = torch.load(
+        join(dirname(__file__), "data", "mdn_test.pth"), weights_only=True
+    )
     model.load_state_dict(checkpoint["state_dict"])
     assert isinstance(model, MDN)

@@ -386,6 +386,7 @@ def load_vocoder(path, device, acoustic_config):
         checkpoint = torch.load(
             path,
             map_location=lambda storage, loc: storage,
+            weights_only=True,
         )
 
         vocoder = instantiate(vocoder_config.generator).to(device)
