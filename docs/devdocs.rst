@@ -64,6 +64,38 @@ You can run the tests by the following command:
 
 Please make sure tests are all passing before making a PR.
 
+``torch.load`` and ``weights_only``
+------------------------------------
+
+Since PyTorch 2.6, ``torch.load`` defaults to ``weights_only=True``, which restricts
+unpickling to a small allow-list of "safe" types. NNSVS checkpoints pickle an
+``omegaconf.listconfig.ListConfig`` alongside the ``state_dict``, so loading them with
+the new default fails with ``UnpicklingError: Weights only load failed``.
+
+All first-party ``torch.load`` call sites in this repository (``nnsvs/``, ``utils/``,
+``recipes/_common/``, ``tests/``) explicitly pass ``weights_only=False`` to restore the
+pre-2.6 behavior. This is intentional, but it comes with a trade-off worth knowing about
+if you touch this code or write new checkpoint-loading scripts:
+
+- ``weights_only=False`` disables PyTorch's unpickling allow-list and falls back to
+  Python's regular ``pickle``, which can execute arbitrary code embedded in the file
+  (see the `CVE-2025-32434 <https://nvd.nist.gov/vuln/detail/CVE-2025-32434>`_ class of
+  issues, and PyTorch's own `serialization security notes
+  <https://pytorch.org/docs/stable/notes/serialization.html#security>`_).
+- This is considered acceptable here because these checkpoints are treated as
+  first-party artifacts, produced by this repository's own training code. **Do not**
+  load ``.pth`` files downloaded from an untrusted source (e.g. a third-party voice
+  bank distribution) with the current code without inspecting them first.
+- When adding a new ``torch.load`` call, pass ``weights_only=False`` explicitly for
+  consistency, but do not silently reuse it to load files whose provenance you don't
+  trust.
+
+If this becomes a real distribution concern (e.g. sharing pre-trained checkpoints
+publicly), the more robust long-term fix is to stop pickling ``ListConfig``/config
+objects into the checkpoint at all -- save the config as a separate YAML file next to
+the checkpoint (as ``SPSVS`` already does for model definitions) and keep the
+``state_dict``-only checkpoint loadable under the default ``weights_only=True``.
+
 Building docs locally
 ---------------------
 
