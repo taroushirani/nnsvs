@@ -617,11 +617,20 @@ def get_stream_weight(stream_weights, stream_sizes):
 def _instantiate_optim(optim_config, model):
     # Optimizer
     optimizer_class = getattr(optim, optim_config.optimizer.name)
-    optimizer = optimizer_class(model.parameters(), **optim_config.optimizer.params)
+    # NOTE: convert to plain Python types here (instead of leaving them as
+    # OmegaConf ListConfig/DictConfig) so that list-valued hyperparameters
+    # (e.g. Adam's betas) don't leak OmegaConf containers into the optimizer's
+    # param_groups, which would otherwise end up pickled into optimizer_state
+    # and make the resulting checkpoint unloadable under weights_only=True.
+    optimizer_params = OmegaConf.to_container(optim_config.optimizer.params, resolve=True)
+    optimizer = optimizer_class(model.parameters(), **optimizer_params)
 
     # Scheduler
     lr_scheduler_class = getattr(optim.lr_scheduler, optim_config.lr_scheduler.name)
-    lr_scheduler = lr_scheduler_class(optimizer, **optim_config.lr_scheduler.params)
+    lr_scheduler_params = OmegaConf.to_container(
+        optim_config.lr_scheduler.params, resolve=True
+    )
+    lr_scheduler = lr_scheduler_class(optimizer, **lr_scheduler_params)
 
     return optimizer, lr_scheduler
 
@@ -629,7 +638,9 @@ def _instantiate_optim(optim_config, model):
 def _resume(logger, resume_config, model, optimizer, lr_scheduler):
     if resume_config.checkpoint is not None and len(resume_config.checkpoint) > 0:
         logger.info("Load weights from %s", resume_config.checkpoint)
-        checkpoint = torch.load(to_absolute_path(resume_config.checkpoint))
+        checkpoint = torch.load(
+            to_absolute_path(resume_config.checkpoint), weights_only=True
+        )
         state_dict = checkpoint["state_dict"]
         model_dict = model.state_dict()
         valid_state_dict = {
@@ -716,17 +727,19 @@ def setup(config, device, collate_fn=collate_fn_default):
 
     # Optimizer
     optimizer_class = getattr(optim, config.train.optim.optimizer.name)
-    optimizer = optimizer_class(
-        model.parameters(), **config.train.optim.optimizer.params
+    optimizer_params = OmegaConf.to_container(
+        config.train.optim.optimizer.params, resolve=True
     )
+    optimizer = optimizer_class(model.parameters(), **optimizer_params)
 
     # Scheduler
     lr_scheduler_class = getattr(
         optim.lr_scheduler, config.train.optim.lr_scheduler.name
     )
-    lr_scheduler = lr_scheduler_class(
-        optimizer, **config.train.optim.lr_scheduler.params
+    lr_scheduler_params = OmegaConf.to_container(
+        config.train.optim.lr_scheduler.params, resolve=True
     )
+    lr_scheduler = lr_scheduler_class(optimizer, **lr_scheduler_params)
 
     # DataLoader
     data_loaders, samplers = get_data_loaders(config.data, collate_fn, logger)
