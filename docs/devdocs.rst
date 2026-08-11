@@ -36,21 +36,21 @@ If you write a docstrings for your new functinoality, please follow the same sty
 Formatting and linting
 ----------------------
 
-https://github.com/pfnet/pysen is used for formatting and linting. Please run the following commands when you make a PR.
+https://github.com/astral-sh/ruff is used for formatting and linting. Please run the following commands when you make a PR.
 
 Formatting
 ^^^^^^^^^^^
 
 .. code::
 
-   pysen run format
+   ruff format .
 
 Linting
 ^^^^^^^
 
 .. code::
 
-   pysen run lint
+   ruff check .
 
 Tests
 -----

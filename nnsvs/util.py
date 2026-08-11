@@ -8,10 +8,11 @@ import numpy as np
 import pyworld
 import torch
 from hydra.utils import instantiate
-from nnsvs.multistream import get_static_features, get_static_stream_sizes
-from nnsvs.usfgan import USFGANWrapper
 from omegaconf import OmegaConf
 from torch import nn
+
+from nnsvs.multistream import get_static_features, get_static_stream_sizes
+from nnsvs.usfgan import USFGANWrapper
 
 try:
     from parallel_wavegan.utils import load_model
@@ -59,7 +60,8 @@ def init_weights(net, init_type="normal", init_gain=0.02):
             if hasattr(m, "bias") and m.bias is not None:
                 nn.init.constant_(m.bias.data, 0.0)
         elif classname.find("BatchNorm2d") != -1:
-            # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
+            # BatchNorm Layer's weight is not a matrix; only normal
+            # distribution applies.
             nn.init.normal_(m.weight.data, 1.0, init_gain)
             nn.init.constant_(m.bias.data, 0.0)
 

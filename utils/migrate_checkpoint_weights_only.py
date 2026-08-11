@@ -48,7 +48,7 @@ def migrate_checkpoint(input_file, output_file, verbose=True):
     if verbose:
         size = os.path.getsize(input_file)
         print("Processing:", input_file)
-        print(f"File size (before): {size / 1024/1024:.3f} MB")
+        print(f"File size (before): {size / 1024 / 1024:.3f} MB")
 
     count = [0]
     checkpoint = _sanitize(checkpoint, count)
@@ -58,7 +58,7 @@ def migrate_checkpoint(input_file, output_file, verbose=True):
     torch.save(checkpoint, output_file)
     if verbose:
         size = os.path.getsize(output_file)
-        print(f"File size (after): {size / 1024/1024:.3f} MB")
+        print(f"File size (after): {size / 1024 / 1024:.3f} MB")
 
     # Verify the migrated checkpoint is loadable under the strict default.
     torch.load(output_file, map_location="cpu", weights_only=True)

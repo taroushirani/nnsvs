@@ -21,6 +21,15 @@ import torch
 import torch.distributed as dist
 from hydra.utils import get_original_cwd, to_absolute_path
 from nnmnkwii import metrics
+from omegaconf import DictConfig, ListConfig, OmegaConf
+from sklearn.preprocessing import MinMaxScaler as SKMinMaxScaler
+from torch import nn, optim
+from torch.cuda.amp import GradScaler
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils import data as data_utils
+from torch.utils.data.sampler import BatchSampler
+from torch.utils.tensorboard import SummaryWriter
+
 from nnsvs.base import PredictionType
 from nnsvs.gen import gen_world_params
 from nnsvs.logger import getLogger
@@ -35,14 +44,6 @@ from nnsvs.multistream import (
 )
 from nnsvs.pitch import lowpass_filter, note_segments
 from nnsvs.util import MinMaxScaler, StandardScaler, init_seed, pad_2d
-from omegaconf import DictConfig, ListConfig, OmegaConf
-from sklearn.preprocessing import MinMaxScaler as SKMinMaxScaler
-from torch import nn, optim
-from torch.cuda.amp import GradScaler
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils import data as data_utils
-from torch.utils.data.sampler import BatchSampler
-from torch.utils.tensorboard import SummaryWriter
 
 plt.style.use("seaborn-v0_8-whitegrid")
 
@@ -197,10 +198,10 @@ def batch_by_size(
         num_tokens = num_tokens_fn(idx)
         sample_lens.append(num_tokens)
         sample_len = max(sample_len, num_tokens)
-        assert (
-            sample_len <= max_tokens
-        ), "sentence at index {} of size {} exceeds max_tokens " "limit of {}!".format(
-            idx, sample_len, max_tokens
+        assert sample_len <= max_tokens, (
+            "sentence at index {} of size {} exceeds max_tokens limit of {}!".format(
+                idx, sample_len, max_tokens
+            )
         )
         num_tokens = (len(batch) + 1) * sample_len
 
@@ -409,7 +410,8 @@ def get_data_loaders(data_config, collate_fn, logger):
     """
     if "filter_long_segments" not in data_config:
         logger.warning(
-            "filter_long_segments is not found in the data config. Consider set it explicitly."
+            "filter_long_segments is not found in the data config. "
+            "Consider set it explicitly."
         )
         logger.info("Disable filtering for long segments.")
         filter_long_segments = False
@@ -418,7 +420,8 @@ def get_data_loaders(data_config, collate_fn, logger):
 
     if "filter_num_frames" not in data_config:
         logger.warning(
-            "filter_num_frames is not found in the data config. Consider set it explicitly."
+            "filter_num_frames is not found in the data config. "
+            "Consider set it explicitly."
         )
         filter_num_frames = 6000
         filter_min_num_frames = 0
@@ -451,7 +454,8 @@ def get_data_loaders(data_config, collate_fn, logger):
         # Dynamic batch size
         if data_config.batch_max_frames > 0:
             logger.debug(
-                f"Dynamic batch size with batch_max_frames={data_config.batch_max_frames}"
+                "Dynamic batch size with "
+                f"batch_max_frames={data_config.batch_max_frames}"
             )
             dataset = Dataset(
                 in_files,
@@ -622,7 +626,9 @@ def _instantiate_optim(optim_config, model):
     # (e.g. Adam's betas) don't leak OmegaConf containers into the optimizer's
     # param_groups, which would otherwise end up pickled into optimizer_state
     # and make the resulting checkpoint unloadable under weights_only=True.
-    optimizer_params = OmegaConf.to_container(optim_config.optimizer.params, resolve=True)
+    optimizer_params = OmegaConf.to_container(
+        optim_config.optimizer.params, resolve=True
+    )
     optimizer = optimizer_class(model.parameters(), **optimizer_params)
 
     # Scheduler
@@ -670,7 +676,8 @@ def setup(config, device, collate_fn=collate_fn_default):
     Args:
         config (dict): configuration for training
         device (torch.device): device to use for training
-        collate_fn (callable, optional): collate function. Defaults to collate_fn_default.
+        collate_fn (callable, optional): collate function. Defaults to
+            collate_fn_default.
 
     Returns:
         (tuple): tuple containing model, optimizer, learning rate scheduler,
@@ -804,7 +811,8 @@ def setup_gan(config, device, collate_fn=collate_fn_default):
     Args:
         config (dict): configuration for training
         device (torch.device): device to use for training
-        collate_fn (callable, optional): collate function. Defaults to collate_fn_default.
+        collate_fn (callable, optional): collate function. Defaults to
+            collate_fn_default.
 
     Returns:
         (tuple): tuple containing model, optimizer, learning rate scheduler,
@@ -1071,7 +1079,8 @@ def compute_pitch_regularization_weight(segments, N, decay_size=25, max_w=0.5):
             w[s : s + decay_size] *= torch.arange(decay_size) / decay_size
             w[e - decay_size : e] *= torch.arange(decay_size - 1, -1, -1) / decay_size
         else:
-            # For shote notes (less than decay_size*0.01 sec) we don't use pitch regularization
+            # For shote notes (less than decay_size*0.01 sec) we don't use
+            # pitch regularization
             w[s:e] = 0.0
 
     return w
@@ -1352,7 +1361,8 @@ def eval_pitch_model(
                     np.min(np.exp(pred_lf0)),
                 )
                 - 10,
-                max(np.max(lf0_score), np.max(np.exp(lf0)), np.max(np.exp(pred_lf0))) + 10,
+                max(np.max(lf0_score), np.max(np.exp(lf0)), np.max(np.exp(pred_lf0)))
+                + 10,
             )
             plt.legend(loc="upper right", borderaxespad=0, ncol=3)
             plt.tight_layout()
@@ -1740,7 +1750,7 @@ def eval_spss_model(
                 # (T, D_out) -> (T, static_dim)
                 pred_out_feats_denorm = multi_stream_mlpg(
                     pred_out_feats_denorm,
-                    (out_scaler.scale_ ** 2).cpu().numpy(),
+                    (out_scaler.scale_**2).cpu().numpy(),
                     get_windows(model_config.num_windows),
                     model_config.stream_sizes,
                     model_config.has_dynamic_features,
@@ -2129,7 +2139,9 @@ def plot_spsvs_params(
         ax.set_xlim(timeaxis[0], timeaxis[-1])
         ax.set_ylim(
             min(
-                np.min(f0_score[f0_score > 0]), np.min(np.exp(lf0)), np.min(np.exp(pred_lf0))
+                np.min(f0_score[f0_score > 0]),
+                np.min(np.exp(lf0)),
+                np.min(np.exp(pred_lf0)),
             )
             - 10,
             max(np.max(f0_score), np.max(np.exp(lf0)), np.max(np.exp(pred_lf0))) + 10,
@@ -2354,7 +2366,9 @@ def plot_mel_params(
         ax.set_xlim(timeaxis[0], timeaxis[-1])
         ax.set_ylim(
             min(
-                np.min(f0_score[f0_score > 0]), np.min(np.exp(lf0)), np.min(np.exp(pred_lf0))
+                np.min(f0_score[f0_score > 0]),
+                np.min(np.exp(lf0)),
+                np.min(np.exp(pred_lf0)),
             )
             - 10,
             max(np.max(f0_score), np.max(np.exp(lf0)), np.max(np.exp(pred_lf0))) + 10,

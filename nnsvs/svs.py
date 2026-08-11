@@ -8,6 +8,8 @@ import torch
 from hydra.utils import instantiate
 from nnmnkwii.io import hts
 from nnmnkwii.preprocessing.f0 import interp1d
+from omegaconf import OmegaConf
+
 from nnsvs.gen import (
     postprocess_acoustic,
     postprocess_duration,
@@ -29,7 +31,6 @@ from nnsvs.io.hts import (
 from nnsvs.logger import getLogger
 from nnsvs.usfgan import USFGANWrapper
 from nnsvs.util import MinMaxScaler, StandardScaler, extract_static_scaler, load_vocoder
-from omegaconf import OmegaConf
 
 
 class BaseSVS(object):
@@ -289,7 +290,8 @@ Acoustic model: {acoustic_str}
             else:
                 vocoder_params = {
                     "generator_type": self.vocoder_config.get(
-                        "generator_type", "ParallelWaveGANGenerator"  # type: ignore
+                        "generator_type",
+                        "ParallelWaveGANGenerator",  # type: ignore
                     ),
                     "generator_params": OmegaConf.to_container(
                         self.vocoder_config.generator_params
@@ -396,7 +398,8 @@ Acoustic model: {acoustic_str}
             labels, pred_durations, lag, frame_period=self.config.frame_period
         )
         self.logger.info(
-            f"Elapsed time for duration post-processing: {time.time() - start_time:.3f} sec"
+            "Elapsed time for duration post-processing: "
+            f"{time.time() - start_time:.3f} sec"
         )
         return duration_modified_labels
 
@@ -448,7 +451,8 @@ Acoustic model: {acoustic_str}
             f0_shift_in_cent=f0_shift_in_cent,
         )
         self.logger.info(
-            f"Elapsed time for acoustic feature prediction: {time.time() - start_time:.3f} sec"
+            "Elapsed time for acoustic feature prediction: "
+            f"{time.time() - start_time:.3f} sec"
         )
         # log real-time factor (RT)
         RT = (time.time() - start_time) / (
@@ -487,8 +491,8 @@ Acoustic model: {acoustic_str}
                 One of ``gv``, ``merlin`` or ``nnsvs``. Recommended to use ``gv``
                 for general purpose.
             trajectory_smoothing (bool): Whether to apply trajectory smoothing.
-            trajectory_smoothing_cutoff (float): Cutoff frequency for trajectory smoothing
-                of spectral features.
+            trajectory_smoothing_cutoff (float): Cutoff frequency for
+                trajectory smoothing of spectral features.
             trajectory_smoothing_cutoff_f0 (float): Cutoff frequency for trajectory
                 smoothing of f0.
             vuv_threshold (float): V/UV threshold.
@@ -526,7 +530,8 @@ Acoustic model: {acoustic_str}
             fill_silence_to_rest=fill_silence_to_rest,
         )
         self.logger.info(
-            f"Elapsed time for acoustic post-processing: {time.time() - start_time:.3f} sec"
+            "Elapsed time for acoustic post-processing: "
+            f"{time.time() - start_time:.3f} sec"
         )
         return multistream_features
 
@@ -617,7 +622,8 @@ WORLD is only supported for waveform generation"""
             target_loudness=target_loudness,
         )
         self.logger.info(
-            f"Elapsed time for waveform post-processing: {time.time() - start_time:.3f} sec"
+            "Elapsed time for waveform post-processing: "
+            f"{time.time() - start_time:.3f} sec"
         )
         return wav
 
@@ -648,7 +654,8 @@ WORLD is only supported for waveform generation"""
             post_filter_type (str): Post-filter type. ``merlin``, ``gv`` or ``nnsvs``
                 is supported.
             trajectory_smoothing (bool): Whether to smooth acoustic feature trajectory.
-            trajectory_smoothing_cutoff (int): Cutoff frequency for trajectory smoothing.
+            trajectory_smoothing_cutoff (int): Cutoff frequency for
+                trajectory smoothing.
             trajectory_smoothing_cutoff_f0 (int): Cutoff frequency for trajectory
                 smoothing of f0.
             vuv_threshold (float): Threshold for VUV.
@@ -840,7 +847,8 @@ class NEUTRINO(SPSVS):
             style_shift (int): style shift parameter
             phrase_num (int): phrase number to use for inference
             trajectory_smoothing (bool): whether to apply trajectory smoothing
-            trajectory_smoothing_cutoff (float): cutoff frequency for trajectory smoothing
+            trajectory_smoothing_cutoff (float): cutoff frequency for
+                trajectory smoothing
             trajectory_smoothing_cutoff_f0 (float): cutoff frequency for trajectory
                 smoothing for f0
             vuv_threshold (float): V/UV threshold
@@ -908,7 +916,8 @@ class NEUTRINO(SPSVS):
         f0 = np.exp(lf0.copy())
         f0[vuv < vuv_threshold] = 0
 
-        # NOTE: Neutrino-compatible MGC should have negative values at the 0-th coefficient.
+        # NOTE: Neutrino-compatible MGC should have negative values at the
+        # 0-th coefficient.
         if mgc[:, 0].mean() > 0:
             self.logger.warning("MGC 0-th coefficient is positive.")
             _warn_if_model_is_old(self.logger)

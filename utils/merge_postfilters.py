@@ -30,7 +30,7 @@ if __name__ == "__main__":
     for path in [args.mgc_checkpoint, args.bap_checkpoint]:
         size = os.path.getsize(path)
         print("Processisng:", path)
-        print(f"File size: {size / 1024/1024:.3f} MB")
+        print(f"File size: {size / 1024 / 1024:.3f} MB")
 
     mgc_model = OmegaConf.load(Path(args.mgc_checkpoint).parent / "model.yaml")
     bap_model = OmegaConf.load(Path(args.bap_checkpoint).parent / "model.yaml")
@@ -56,4 +56,4 @@ if __name__ == "__main__":
     checkpoint_path = Path(args.output_dir) / "latest.pth"
     torch.save(checkpoint, checkpoint_path)
     size = os.path.getsize(checkpoint_path)
-    print(f"File size (after): {size / 1024/1024:.3f} MB")
+    print(f"File size (after): {size / 1024 / 1024:.3f} MB")
