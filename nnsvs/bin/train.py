@@ -82,7 +82,9 @@ def train_step(
         out_feats = model.preprocess_target(out_feats)
 
     # Run forward
-    with autocast(enabled=grad_scaler is not None):
+    # NOTE: see the same note in train_acoustic.py; without set_grad_enabled the
+    # graph of the last dev batch is kept alive by the returned loss.
+    with torch.set_grad_enabled(train), autocast(enabled=grad_scaler is not None):
         pred_out_feats = model(in_feats, lengths)
 
     # Mask (B, T, 1)

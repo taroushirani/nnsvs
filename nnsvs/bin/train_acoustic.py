@@ -102,7 +102,11 @@ def train_step(
     )
 
     # Run forward
-    with autocast(enabled=grad_scaler is not None):
+    # NOTE: gradients are only needed in the training phase. Without
+    # set_grad_enabled, the graph built here is kept alive by the loss returned
+    # to the caller until the caller rebinds it, so the graph of the last dev
+    # batch stays resident on the GPU throughout the next training epoch.
+    with torch.set_grad_enabled(train), autocast(enabled=grad_scaler is not None):
         outs = model(in_feats, lengths, out_feats)
         if model.has_residual_lf0_prediction():
             pred_out_feats, lf0_residual = outs

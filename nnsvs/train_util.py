@@ -249,8 +249,14 @@ class Dataset(data_utils.Dataset):  # type: ignore
         Returns:
             tuple: input and target in numpy format
         """
-        if self.allow_cache and len(self.caches[idx]) != 0:
-            return self.caches[idx]
+        if self.allow_cache:
+            # NOTE: self.caches is a multiprocessing.Manager list proxy, so every
+            # subscript is a full pickle/socket/unpickle round-trip that
+            # materializes the whole (x, y) tuple. Fetch it exactly once instead
+            # of once for the emptiness check and once for the return value.
+            cached = self.caches[idx]
+            if len(cached) != 0:
+                return cached
         x, y = np.load(self.in_paths[idx]), np.load(self.out_paths[idx])
         if self.allow_cache:
             self.caches[idx] = (x, y)
