@@ -1,0 +1,18 @@
+# Smoke-test variant of flow.yaml.
+# Runs a handful of epochs so that the wiring (model instantiation, loss
+# computation, evaluation and checkpointing) can be verified end-to-end
+# before launching a real training run.
+defaults:
+  - flow
+  - _self_
+
+nepochs: 3
+checkpoint_epoch_interval: 1
+
+# NOTE: torch.cuda.amp is a no-op on CPU. Disabled here so that the same
+# config can be used for a CPU-only sanity check.
+use_amp: false
+
+# Evaluation is the most expensive part of a short run (each utterance
+# requires K_step ODE steps), so only one utterance is evaluated.
+max_num_eval_utts: 1
