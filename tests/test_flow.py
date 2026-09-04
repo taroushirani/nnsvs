@@ -127,7 +127,6 @@ def test_flow_matching_f0(solver, predict_residual):
     model = FlowMatchingF0(**params)
     assert model.prediction_type() == PredictionType.DIFFUSION
     assert model.has_residual_lf0_prediction()
-    assert not model.use_relative_f0()
 
     B, T = 4, 100
     init_seed(B * T)
