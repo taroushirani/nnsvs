@@ -1,0 +1,222 @@
+# This is a config file for a flow matching-based NNSVS's multi-stream acoustic
+# model with WORLD-based acoustic features.
+# Unlike acoustic_nnsvs_world_multi_ar_f0_diff_mgcbap.yaml (a.k.a. NNSVS-WORLD
+# v5), *all* the generative streams (lf0, mgc and bap) are modeled by the same
+# non-autoregressive rectified flow (flow matching) formulation with the same
+# denoiser architecture. The motivation is to make the training regime
+# homogeneous across the sub-modules: the autoregressive log-F0 decoder and the
+# diffusion-based mgc/bap models of v5 require very different learning rates
+# and gradient clipping, which makes joint training with a single optimizer
+# unstable (especially on small databases).
+# NOTE: log-F0 is modeled as the *residual* with respect to the log-F0 of the
+# musical score (as in the other NNSVS acoustic models). The residual is not
+# bounded by a scaled tanh but by clipping the one-step estimate of the ODE
+# endpoint (see `clip_cent`).
+# NOTE: in_ph_start_idx (start index of current-phoneme context) and
+# in_ph_end_idx (end index of current-phoneme context) are hed-specific
+# parameters and used for *optional* phoneme embedding (with embedding size of
+# `embed_dim`). If you want to use this config with your hed file, there are
+# two options:
+#   1. Set `embed_dim` to null to disable phoneme embedding (the easiest way)
+#   2. Find start and end indices of current-phoneme contexts in your hed file
+#      and set them to `in_ph_start_idx` and `in_ph_end_idx` respectively.
+# Please carefully check hed-specific configurations.
+
+# (mgc, lf0, vuv, bap)
+stream_sizes: [60, 1, 1, 5]
+has_dynamic_features: [false, false, false, false]
+num_windows: 1
+# NOTE: used only if train.stream_wise_loss is true. If left unspecified, the
+# weights are set proportional to the stream sizes (i.e. 60:1:1:5), which makes
+# the contribution of log-F0 negligible. The weights below are uniform and sum
+# to one so that the overall gradient scale (hence the meaning of
+# train.optim.clip_norm) stays comparable to the default.
+stream_weights: [0.25, 0.25, 0.25, 0.25]
+
+netG:
+  _target_: nnsvs.acoustic_models.NPSSMDNMultistreamParametricModel
+  # The number of total input phonetic/musical context features.
+  in_dim: 86 # NOTE: need to be changed for each hed file
+  out_dim: 67
+
+  # Must be set as the same as the above stream_sizes
+  stream_sizes: [60, 1, 1, 5]
+  # NOTE: all the sub-models are frame-wise (i.e. no reduction), but the
+  # reduction factor is still used to pad the input features at inference time.
+  reduction_factor: 4
+
+  # You MUST set in_rest_idx, in_lf0_idx and out_lf0_idx correctly
+  # otherwise the model does't work at all.
+  # Please configure your hed file so that in_rest_idx to be zero. i.e.,
+  # put the sil-or-not phonetic context on the first item of your hed file.
+  in_rest_idx: 0 # NOTE: need to be changed for each hed file
+  in_lf0_idx: 51 # NOTE: need to be changed for each hed file
+  out_lf0_idx: 60
+  # Please leave the following parameters unspecified if you want to
+  # find the corresponding values automatically from in/out scalers.
+  in_lf0_min: null
+  in_lf0_max: null
+  out_lf0_mean: null
+  out_lf0_scale: null
+
+  # Flags to control conditioning features for V/UV prediction
+  # If all true, [mgc, lf0, bap] are used for V/UV prediction.
+  # IMPORTANT: not optimized yet
+  vuv_model_bap_conditioning: false
+  # if true, only 0-th dim of bap is used
+  vuv_model_bap0_conditioning: false
+  vuv_model_lf0_conditioning: true
+  vuv_model_mgc_conditioning: true
+
+  # A separate model for modeling continuous log-F0
+  lf0_model:
+    _target_: nnsvs.techsinger.FlowMatchingF0
+    # in_dim must be equal to netG.in_dim
+    in_dim: 86 # NOTE: need to be changed for each hed file
+    # out_dim must be 1 (log-F0)
+    out_dim: 1
+    # Number of discrete time steps for the time-step embedding of denoise_fn
+    num_timesteps: 1000
+    # Number of ODE steps at inference time. Can be reduced (e.g. 25 or 50) to
+    # speed up inference at the cost of quality.
+    K_step: 100
+    # ODE solver: euler or midpoint (2nd order; 2x slower per step)
+    solver: euler
+    # log-F0 is already mean-var normalized, so no extra scaling is needed
+    norm_scale: 1.0
+    # If true, model the residual F0 with respect to the score's log-F0.
+    # Set to false to model the normalized log-F0 directly (as in TechSinger).
+    predict_residual: true
+    # x1 = 1 corresponds to a residual of `residual_scale_cent` cent.
+    # Consider reducing this (e.g. 200-300) if the residual distribution is
+    # too concentrated around zero relative to the N(0, 1) prior.
+    residual_scale_cent: 600
+    # Maximum deviation from the score's log-F0 in cent. The one-step estimate
+    # of the ODE endpoint is clipped to this range at every solver step.
+    # Set to null to disable the clipping.
+    clip_cent: 600
+    # This must be the same as netG.in_lf0_idx.
+    # NOTE: unlike in_lf0_min/max and out_lf0_mean/scale, this is NOT
+    # propagated from the parent model, so it must be set explicitly.
+    in_lf0_idx: 51 # NOTE: need to be changed for each hed file
+    # This must be 0. Don't change
+    out_lf0_idx: 0
+    # OK to leave unspecified
+    in_lf0_min: null
+    in_lf0_max: null
+    out_lf0_mean: null
+    out_lf0_scale: null
+    # The encoder processes the phonetic/musical contexts into hidden
+    # representations used as the conditioning features of denoise_fn
+    encoder:
+      _target_: nnsvs.model.FFConvLSTM
+      # This must be equal to netG.lf0_model.in_dim
+      in_dim: 86 # NOTE: need to be changed for each hed file
+      in_ph_start_idx: 3 # NOTE: need to be changed for each hed file
+      in_ph_end_idx: 50 # NOTE: need to be changed for each hed file
+      embed_dim: 256
+      ff_hidden_dim: 256
+      conv_hidden_dim: 128
+      lstm_hidden_dim: 64
+      num_lstm_layers: 2
+      bidirectional: true
+      dropout: 0.0
+      out_dim: 256 # must be equal to netG.lf0_model.denoise_fn.encoder_hidden_dim
+    # Velocity estimator (prior -> log-F0 residual)
+    denoise_fn:
+      _target_: nnsvs.diffsinger.DiffNet
+      # in_dim must be equal to netG.lf0_model.out_dim
+      in_dim: 1
+      encoder_hidden_dim: 256
+      residual_layers: 10
+      residual_channels: 192
+      dilation_cycle_length: 4
+
+  # Spectral parameter prediction model
+  mgc_model:
+    _target_: nnsvs.techsinger.FlowMatching
+    in_dim: 87 # (x, lf0) # NOTE: need to be changed for each hed file
+    out_dim: 60
+    num_timesteps: 1000
+    K_step: 100
+    solver: euler
+    # Unlike diffusion models, flow matching does not assume the data to be in
+    # [-1, 1], so the mean-var normalized features can be used as they are.
+    # May need to adjust in 1 to 3.
+    norm_scale: 1.0
+    # The encoder processes the phonetic/musical contexts into hidden
+    # representations
+    encoder:
+      _target_: nnsvs.model.FFConvLSTM
+      # This must be equal to netG.mgc_model.in_dim
+      in_dim: 87 # (x, lf0) # NOTE: need to be changed for each hed file
+      in_ph_start_idx: 3 # NOTE: need to be changed for each hed file
+      in_ph_end_idx: 50 # NOTE: need to be changed for each hed file
+      embed_dim: 256
+      ff_hidden_dim: 512
+      conv_hidden_dim: 256
+      lstm_hidden_dim: 128
+      num_lstm_layers: 2
+      bidirectional: true
+      dropout: 0.0
+      out_dim: 256 # must be equal to netG.mgc_model.denoise_fn.encoder_hidden_dim
+    # Velocity estimator (prior -> output features)
+    denoise_fn:
+      _target_: nnsvs.diffsinger.DiffNet
+      # in_dim must be equal to netG.mgc_model.out_dim
+      in_dim: 60
+      encoder_hidden_dim: 256
+      residual_layers: 20
+      residual_channels: 256
+      dilation_cycle_length: 4
+
+  # Aperiodic parameter prediction model
+  bap_model:
+    _target_: nnsvs.techsinger.FlowMatching
+    in_dim: 87 # (x, lf0) # NOTE: need to be changed for each hed file
+    out_dim: 5
+    num_timesteps: 1000
+    K_step: 100
+    solver: euler
+    norm_scale: 1.0
+    # The encoder processes the phonetic/musical contexts into hidden
+    # representations
+    encoder:
+      _target_: nnsvs.model.FFConvLSTM
+      # This must be equal to netG.bap_model.in_dim
+      in_dim: 87 # (x, lf0) # NOTE: need to be changed for each hed file
+      in_ph_start_idx: 3 # NOTE: need to be changed for each hed file
+      in_ph_end_idx: 50 # NOTE: need to be changed for each hed file
+      embed_dim: 256
+      ff_hidden_dim: 256
+      conv_hidden_dim: 128
+      lstm_hidden_dim: 64
+      num_lstm_layers: 2
+      bidirectional: true
+      dropout: 0.0
+      out_dim: 128 # must be equal to netG.bap_model.denoise_fn.encoder_hidden_dim
+    # Velocity estimator (prior -> output features)
+    denoise_fn:
+      _target_: nnsvs.diffsinger.DiffNet
+      # in_dim must be equal to netG.bap_model.out_dim
+      in_dim: 5
+      encoder_hidden_dim: 128
+      residual_layers: 10
+      residual_channels: 128
+      dilation_cycle_length: 4
+
+  # V/UV prediction model
+  vuv_model:
+    _target_: nnsvs.model.FFConvLSTM
+    in_dim: 147 # (x, lf0, mgc) # NOTE: need to be changed for each hed file
+    in_ph_start_idx: 3 # NOTE: need to be changed for each hed file
+    in_ph_end_idx: 50 # NOTE: need to be changed for each hed file
+    embed_dim: 256
+    ff_hidden_dim: 256
+    conv_hidden_dim: 128
+    lstm_hidden_dim: 64
+    num_lstm_layers: 2
+    bidirectional: true
+    out_dim: 1
+    dropout: 0.1
+    init_type: "kaiming_normal"

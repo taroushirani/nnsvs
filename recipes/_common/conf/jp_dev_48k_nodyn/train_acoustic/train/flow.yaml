@@ -1,0 +1,79 @@
+# Training config for flow matching-based acoustic models
+# (acoustic_nnsvs_world_multi_flow_f0_flow_mgcbap.yaml).
+# The hyperparameters follow TechSinger's stage-1 setting (Adam, lr 5e-4,
+# betas (0.9, 0.98), gradient clipping of 1.0, L1 loss on the velocity).
+# NOTE: longer training iterations are preferred to improve quality
+
+out_dir: exp
+log_dir: tensorboard/exp
+
+# Use automatic mixed precision training or not
+# only works on supported GPUs
+use_amp: true
+
+# Use distributed training or not. If true, uses distributed data parallel.
+use_ddp: false
+
+# PWG checkpoint for synthesizing waveforms
+pretrained_vocoder_checkpoint: null
+
+# steps can either be specified by steps or epochs
+max_train_steps: -1
+nepochs: 300
+checkpoint_epoch_interval: 50
+
+# mse (mean squared error; l2 loss) or mae (mean absolute error; l1 loss)
+# NOTE: the flow matching loss is computed by this criterion (on the velocity).
+# L1 is used in TechSinger. NOTE: this is shared by all the streams, so the
+# V/UV prediction is also trained with L1.
+feats_criterion: l1
+
+# Weight for pitch regularization loss
+# NOTE: for flow matching-based log-F0 models, the residual F0 used here is a
+# one-step estimate of the ODE endpoint, which is noisy for small t. It is
+# recommended to keep this at 0.0 unless you know what you are doing.
+pitch_reg_weight: 0.0
+
+# decay_size * 0.005 sec. decay to compute pitch reg weights
+pitch_reg_decay_size: 60
+
+max_num_eval_utts: 5
+
+# NOTE: if false, the losses of all the streams are summed and divided by the
+# total number of elements, which makes the contribution of log-F0 negligible
+# (1/67). Uniform stream weights are specified in the model config.
+stream_wise_loss: true
+use_detect_anomaly: false
+
+optim:
+  optimizer:
+    name: Adam
+    params:
+      lr: 0.0005
+      betas: [0.9, 0.98]
+      weight_decay: 0.0
+  lr_scheduler:
+    name: StepLR
+    params:
+      step_size: 100
+      gamma: 0.5
+  clip_norm: 1.0
+  # NOTE: the whole point of this config is that all the sub-modules share the
+  # same training regime, so no per-submodule param_groups are specified here.
+  # If the joint training still turns out to be unbalanced, you can override
+  # the learning rate and the gradient clipping per sub-module, e.g.:
+  # param_groups:
+  #   - modules: [lf0_model]
+  #     lr: 0.0005
+  #     clip_norm: 1.0
+  #   - modules: [mgc_model, bap_model]
+  #     lr: 0.001
+  #     clip_norm: 1.0
+
+resume:
+  checkpoint:
+  load_optimizer: false
+
+cudnn:
+  benchmark: false
+  deterministic: true
