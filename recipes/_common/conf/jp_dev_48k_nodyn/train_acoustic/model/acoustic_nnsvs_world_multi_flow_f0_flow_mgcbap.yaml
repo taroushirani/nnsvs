@@ -94,7 +94,20 @@ netG:
     # Maximum deviation from the score's log-F0 in cent. The one-step estimate
     # of the ODE endpoint is clipped to this range at every solver step.
     # Set to null to disable the clipping.
-    clip_cent: 600
+    # NOTE: this only affects inference, so it can be changed without
+    # retraining (edit model.yaml in the experiment directory).
+    # NOTE: measured on oniku_kurumi_utagoe_db (712774 voiced frames), the
+    # residual against the score is very concentrated (p50 15 cent, p95 190,
+    # p99 541) but has a long tail (p99.9 1108, max 2051). The frames beyond
+    # 600 cent (0.8%) are almost entirely singing technique, not data errors:
+    # 90% are downward, 75% fall within 100 ms of a note boundary, and the
+    # longest contiguous run is 145 ms with no run at all over 200 ms, i.e.
+    # scoops (shakuri), falls, and the natural lag of F0 behind a notated
+    # leap larger than 6 semitones. Clipping at 600 cent flattened those.
+    # 1200 cent (one octave) leaves only 0.065% clipped while still bounding
+    # the log-F0 in unvoiced and rest regions, where the score log-F0 is only
+    # an interpolation and the model has no other constraint.
+    clip_cent: 1200
     # This must be the same as netG.in_lf0_idx.
     # NOTE: unlike in_lf0_min/max and out_lf0_mean/scale, this is NOT
     # propagated from the parent model, so it must be set explicitly.

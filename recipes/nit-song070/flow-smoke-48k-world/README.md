@@ -60,6 +60,6 @@ model.netG.lf0_model.K_step=20 model.netG.mgc_model.K_step=20 model.netG.bap_mod
   `*_inference` audio and figures instead.
 - In TensorBoard, the predicted log-F0 stays close to the log-F0 of the musical
   score. `FlowMatchingF0` predicts the residual against the score and clips the
-  sampled endpoint to +-`clip_cent` (600 cent by default), so a prediction far
-  away from the score indicates a configuration error (typically a wrong
+  sampled endpoint to +-`clip_cent` (1200 cent in the recipe config), so a
+  prediction far away from the score indicates a configuration error (a wrong
   `in_lf0_idx`, or log-F0 statistics that were not injected).
