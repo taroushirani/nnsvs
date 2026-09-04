@@ -39,9 +39,25 @@ model.netG.lf0_model.K_step=20 model.netG.mgc_model.K_step=20 model.netG.bap_mod
 ## What to check
 
 - The loss is finite and decreases.
+- `GradNorm/lf0_model`, `GradNorm/mgc_model`, `GradNorm/bap_model` and
+  `GradNorm/other` (= `vuv_model`) are of a comparable scale. This is the
+  whole point of the port: in v5 the autoregressive log-F0 decoder produced
+  gradients one to two orders of magnitude smaller than the diffusion-based
+  mgc/bap models, which made joint training with a single optimizer unstable.
+  `train/flow_smoke.yaml` enables `optim.param_groups` purely so that these
+  are logged separately; note that this also makes the gradient clipping
+  per group instead of global, which is the only behavioral difference from
+  `train/flow.yaml`.
 - `params_without_grad` is 0 from the second iteration onwards. It is non-zero
   on the very first iteration because `DiffNet.output_projection.weight` is
   zero-initialized, which is expected (`GaussianDiffusion` behaves the same way).
+- The `ObjEval_*` distortion metrics are meaningless for this model and must be
+  ignored. `train_step` treats the second element of a two-tuple stream output
+  as the predicted features, which holds for `GaussianDiffusion` only by
+  accident (it is the predicted noise there) and is the velocity field for
+  `FlowMatching`. Unlike v5, log-F0 is a flow matching stream too, so the F0
+  distortions are affected as well. Judge the model by the losses and by the
+  `*_inference` audio and figures instead.
 - In TensorBoard, the predicted log-F0 stays close to the log-F0 of the musical
   score. `FlowMatchingF0` predicts the residual against the score and clips the
   sampled endpoint to +-`clip_cent` (600 cent by default), so a prediction far

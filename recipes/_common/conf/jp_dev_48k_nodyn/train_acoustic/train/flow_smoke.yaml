@@ -16,3 +16,22 @@ use_amp: false
 # Evaluation is the most expensive part of a short run (each utterance
 # requires K_step ODE steps), so only one utterance is evaluated.
 max_num_eval_utts: 1
+
+optim:
+  # Split gradient clipping per sub-module. The whole point of the flow
+  # matching port is that lf0, mgc and bap now share the same training
+  # regime, so the gradient norms of the sub-modules should be of a
+  # comparable scale (unlike v5, where the autoregressive log-F0 decoder
+  # produced gradients one to two orders of magnitude smaller than the
+  # diffusion-based mgc/bap models). This makes that directly observable as
+  # GradNorm/lf0_model, GradNorm/mgc_model, GradNorm/bap_model and
+  # GradNorm/other (= vuv_model) in TensorBoard.
+  # NOTE: lr and clip_norm are deliberately omitted so that every group falls
+  # back to the values inherited from flow.yaml. The only behavioral
+  # difference from flow.yaml is that the gradients are clipped per group
+  # instead of globally, which is why this is kept out of the real training
+  # config.
+  param_groups:
+    - modules: [lf0_model]
+    - modules: [mgc_model]
+    - modules: [bap_model]
