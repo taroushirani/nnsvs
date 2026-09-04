@@ -670,6 +670,109 @@ def _resume(logger, resume_config, model, optimizer, lr_scheduler):
             lr_scheduler.load_state_dict(checkpoint["lr_scheduler_state"])
 
 
+def build_optimizer_param_groups(logger, optim_config, model):
+    """Build the object to pass as the first positional arg to the optimizer
+    constructor, based on train.optim.param_groups.
+
+    - If param_groups is unset/empty (the common case), returns
+      filter(lambda p: p.requires_grad, model.parameters()) -- identical to
+      the pre-existing single-group behavior.
+    - If set, each entry is {"modules": [<top-level submodule attr names>],
+      "lr": <optional>}. Parameters of the listed modules become one
+      optimizer param_group (any key omitted, e.g. lr, falls back to the
+      optimizer's top-level defaults). A module must not appear in more than
+      one entry (hard assertion, to avoid splitting one submodule's
+      parameters across groups with different momentum/lr state). Any
+      trainable parameters not covered by param_groups become a final
+      catch-all group using the optimizer's top-level defaults, so partial
+      configs (e.g. only lf0_model listed) still train every submodule.
+
+    See build_grad_clip_groups() for the analogous split used for
+    per-group gradient clipping -- kept separate since clip_norm is a
+    clipping concept, not an optimizer hyperparameter.
+    """
+    param_groups_config = OmegaConf.select(optim_config, "param_groups", default=[])
+    if not param_groups_config:
+        return filter(lambda p: p.requires_grad, model.parameters())
+
+    assigned_ids = set()
+    optimizer_param_groups = []
+    for group in param_groups_config:
+        modules = list(group["modules"])
+        params = []
+        for name in modules:
+            submodule = getattr(model, name)
+            for p in submodule.parameters():
+                if not p.requires_grad:
+                    continue
+                assert id(p) not in assigned_ids, (
+                    f"Module '{name}' has a parameter already claimed by another "
+                    "train.optim.param_groups entry -- modules must not overlap"
+                )
+                assigned_ids.add(id(p))
+                params.append(p)
+        if len(params) == 0:
+            logger.info(
+                "train.optim.param_groups: %s has no trainable parameters "
+                "(frozen?), skipping this group",
+                modules,
+            )
+            continue
+        group_kwargs = {"params": params}
+        if "lr" in group:
+            group_kwargs["lr"] = group["lr"]
+        optimizer_param_groups.append(group_kwargs)
+
+    remaining_params = [
+        p for p in model.parameters() if p.requires_grad and id(p) not in assigned_ids
+    ]
+    if len(remaining_params) > 0:
+        optimizer_param_groups.append({"params": remaining_params})
+
+    return optimizer_param_groups
+
+
+def build_grad_clip_groups(model, optim_config):
+    """Split model's trainable parameters into (label, params, clip_norm)
+    groups for gradient clipping, based on train.optim.param_groups.
+
+    Only meaningful when param_groups is non-empty; callers should keep
+    using a single torch.nn.utils.clip_grad_norm_(model.parameters(), ...)
+    call when it's unset (see train_acoustic.py's _clip_grad_norm_and_log),
+    since that stays byte-identical to the pre-Tier1 behavior.
+
+    Module overlap between entries is not re-validated here: it's already
+    asserted once in build_optimizer_param_groups() at optimizer
+    construction time, and both functions read the same config.
+    """
+    assigned_ids = set()
+    groups = []
+    for group in optim_config.param_groups:
+        modules = list(group["modules"])
+        params = []
+        for name in modules:
+            submodule = getattr(model, name)
+            for p in submodule.parameters():
+                if not p.requires_grad:
+                    continue
+                assigned_ids.add(id(p))
+                params.append(p)
+        if len(params) == 0:
+            continue
+        clip_norm = (
+            group["clip_norm"] if "clip_norm" in group else optim_config.clip_norm
+        )
+        groups.append(("+".join(modules), params, clip_norm))
+
+    remaining_params = [
+        p for p in model.parameters() if p.requires_grad and id(p) not in assigned_ids
+    ]
+    if len(remaining_params) > 0:
+        groups.append(("other", remaining_params, optim_config.clip_norm))
+
+    return groups
+
+
 def setup(config, device, collate_fn=collate_fn_default):
     """Setup for training
 
@@ -737,7 +840,10 @@ def setup(config, device, collate_fn=collate_fn_default):
     optimizer_params = OmegaConf.to_container(
         config.train.optim.optimizer.params, resolve=True
     )
-    optimizer = optimizer_class(model.parameters(), **optimizer_params)
+    optimizer = optimizer_class(
+        build_optimizer_param_groups(logger, config.train.optim, model),
+        **optimizer_params,
+    )
 
     # Scheduler
     lr_scheduler_class = getattr(

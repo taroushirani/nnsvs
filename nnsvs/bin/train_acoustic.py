@@ -6,7 +6,7 @@ import mlflow
 import torch
 import torch.distributed as dist
 from hydra.utils import to_absolute_path
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from torch import nn
 from torch.cuda.amp import autocast
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -16,6 +16,7 @@ from nnsvs.mdn import mdn_get_most_probable_sigma_and_mu, mdn_loss
 from nnsvs.multistream import split_streams
 from nnsvs.svs import load_vocoder
 from nnsvs.train_util import (
+    build_grad_clip_groups,
     check_resf0_config,
     collate_fn_default,
     collate_fn_random_segments,
@@ -29,6 +30,40 @@ from nnsvs.train_util import (
     setup,
 )
 from nnsvs.util import PyTorchStandardScaler, make_non_pad_mask, make_pad_mask
+
+
+def _clip_grad_norm_and_log(model, optim_config, log_metrics):
+    """Clip gradients and record GradNorm metric(s) into log_metrics.
+
+    Returns True if any resulting grad norm is non-finite (caller should
+    skip the optimizer step in that case). When train.optim.param_groups is
+    unset, this clips model.parameters() as a single group against
+    optim_config.clip_norm and logs a single "GradNorm" scalar --
+    byte-identical to the pre-Tier1 behavior. When set, each configured
+    group (plus a catch-all "other" group for any remaining trainable
+    submodules) is clipped independently against its own clip_norm and
+    logged as "GradNorm/{module names}", so e.g. lf0_model's gradient norm
+    can be inspected separately from mgc_model/bap_model's in TensorBoard.
+    """
+    param_groups_config = OmegaConf.select(optim_config, "param_groups", default=[])
+    if not param_groups_config:
+        grad_norm = torch.nn.utils.clip_grad_norm_(
+            model.parameters(), optim_config.clip_norm
+        )
+        log_metrics["GradNorm"] = grad_norm
+        return not torch.isfinite(grad_norm)
+
+    unwrapped_model = (
+        model.module if isinstance(model, (nn.DataParallel, DDP)) else model
+    )
+    any_nonfinite = False
+    for label, params, clip_norm in build_grad_clip_groups(
+        unwrapped_model, optim_config
+    ):
+        grad_norm = torch.nn.utils.clip_grad_norm_(params, clip_norm)
+        log_metrics[f"GradNorm/{label}"] = grad_norm
+        any_nonfinite = any_nonfinite or not torch.isfinite(grad_norm)
+    return any_nonfinite
 
 
 def train_step(
@@ -245,24 +280,16 @@ def train_step(
         if grad_scaler is not None:
             grad_scaler.scale(loss).backward()
             grad_scaler.unscale_(optimizer)
-            grad_norm = torch.nn.utils.clip_grad_norm_(
-                model.parameters(), optim_config.clip_norm
-            )
-            if not torch.isfinite(grad_norm):
+            if _clip_grad_norm_and_log(model, optim_config, log_metrics):
                 logger.info("grad norm is NaN. Skip updating")
             else:
-                log_metrics["GradNorm"] = grad_norm
                 grad_scaler.step(optimizer)
             grad_scaler.update()
         else:
             loss.backward()
-            grad_norm = torch.nn.utils.clip_grad_norm_(
-                model.parameters(), optim_config.clip_norm
-            )
-            if not torch.isfinite(grad_norm):
+            if _clip_grad_norm_and_log(model, optim_config, log_metrics):
                 logger.info("grad norm is NaN. Skip updating")
             else:
-                log_metrics["GradNorm"] = grad_norm
                 optimizer.step()
 
     log_metrics.update(
